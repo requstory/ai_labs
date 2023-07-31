@@ -1,6 +1,4 @@
-nltk
 langchain
 openAI
-chromadb 
-tiktoken
-streamlit
+requests
+duckduckgo-search
