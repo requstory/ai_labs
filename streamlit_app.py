@@ -17,7 +17,7 @@ from langchain.llms import OpenAI
 nltk.download('punkt')
 st.title('Document QA')
 st.write(
-    os.environ["OPENAI_API_KEY"] == st.secrets["OPENAI_API_KEY"],
+    openai_api_key == st.secrets["OPENAI_API_KEY"],
 )
 
 # Prompt the user to enter a URL
