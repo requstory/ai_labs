@@ -23,7 +23,7 @@ const typeLabel = exercise.exerciseType.split('_').map((word) => word[0].toUpper
         <p class="eyebrow">{typeLabel}</p><h1>{exercise.name}</h1><p>Three transparent, production-ready frames in one consistent visual system.</p>
         <ul class="tag-list" aria-label="Exercise summary"><li class="tag" data-squircle data-radius="14">{exercise.equipment}</li><li class="tag" data-squircle data-radius="14">{exercise.primaryMuscle}</li>{exercise.isStretch && <li class="tag" data-squircle data-radius="14">Stretch</li>}</ul>
       </div>
-      <div class="detail-featured" data-squircle data-radius="64"><img src={frameUrl(exercise.slug, 2)} alt={`${exercise.name}, middle position`} width="512" height="512" /></div>
+      <div class="detail-featured" data-squircle data-radius="64"><img src={frameUrl(exercise.slug, 2)} data-frames={JSON.stringify(exercise.frames.map((frame) => frameUrl(exercise.slug, frame)))} alt={`${exercise.name}, middle position`} width="512" height="512" /></div>
     </header>
 
     <section class="section" aria-labelledby="frames-title">

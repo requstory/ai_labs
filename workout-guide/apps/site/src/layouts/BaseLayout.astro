@@ -68,6 +68,49 @@ const socialImage = new URL(image.replace(/^\//, ''), Astro.site);
         observer.observe(element);
       }
 
+      const FRAME_INTERVAL_MS = 450;
+      const frameElements = Array.from(document.querySelectorAll<HTMLImageElement>('img[data-frames]'));
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (frameElements.length > 0 && !reduceMotion) {
+        const state = new Map<HTMLImageElement, { frames: string[]; index: number; direction: 1 | -1 }>();
+        for (const element of frameElements) {
+          try {
+            const frames = JSON.parse(element.dataset.frames ?? '[]') as string[];
+            if (frames.length > 1) state.set(element, { frames, index: 0, direction: 1 });
+          } catch {
+            // Ignore malformed frame data.
+          }
+        }
+
+        const active = new Set<HTMLImageElement>();
+        const frameObserver = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting) active.add(entry.target as HTMLImageElement);
+              else active.delete(entry.target as HTMLImageElement);
+            }
+          },
+          { threshold: 0.1 },
+        );
+        for (const element of state.keys()) frameObserver.observe(element);
+
+        let lastTick = 0;
+        const tick = (timestamp: number) => {
+          if (timestamp - lastTick >= FRAME_INTERVAL_MS) {
+            lastTick = timestamp;
+            for (const element of active) {
+              const entry = state.get(element);
+              if (!entry) continue;
+              entry.index += entry.direction;
+              if (entry.index === entry.frames.length - 1 || entry.index === 0) entry.direction *= -1;
+              element.src = entry.frames[entry.index];
+            }
+          }
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }
+
       const copyStatus = document.querySelector<HTMLElement>('#copy-status');
       for (const button of document.querySelectorAll<HTMLButtonElement>('[data-copy-text]')) {
         button.addEventListener('click', async () => {

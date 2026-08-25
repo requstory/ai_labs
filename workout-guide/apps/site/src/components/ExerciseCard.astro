@@ -28,6 +28,7 @@ const searchText = [
       <img
         class="card-image"
         src={frameUrl(exercise.slug, 1)}
+        data-frames={JSON.stringify(exercise.frames.map((frame) => frameUrl(exercise.slug, frame)))}
         alt={`${exercise.name} exercise illustration`}
         loading="lazy"
         decoding="async"
