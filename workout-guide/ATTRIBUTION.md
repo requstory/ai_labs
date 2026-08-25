@@ -14,18 +14,8 @@ exact source URLs and recorded changes are retained in
 ## Workout music
 
 The FitSplit web app's workout session player (`apps/site/public/audio/`) uses
-four royalty-free tracks by Kevin MacLeod, downloaded from
-[incompetech.com](https://incompetech.com) and re-encoded to 128kbps MP3.
-Each is licensed under
-[Creative Commons: By Attribution 4.0](https://creativecommons.org/licenses/by/4.0/):
-
-- "Getting it Done" by Kevin MacLeod (incompetech.com)
-- "Neon Laser Horizon" by Kevin MacLeod (incompetech.com)
-- "Rocket Power" by Kevin MacLeod (incompetech.com)
-- "Werq" by Kevin MacLeod (incompetech.com)
-
-Five more tracks were downloaded from [Pixabay](https://pixabay.com/music/) and
-re-encoded the same way. The Pixabay Content License does not require
+five royalty-free tracks downloaded from [Pixabay](https://pixabay.com/music/)
+and re-encoded to 128kbps MP3. The Pixabay Content License does not require
 attribution, but it's given anyway:
 
 - "Workout - Workout Music" by AtlasAudio (pixabay.com)
