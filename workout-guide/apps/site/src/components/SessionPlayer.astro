@@ -2,6 +2,7 @@
 import type { Exercise } from '@bryllim/workout-guide';
 import { frameUrl } from '../lib/paths';
 import { muscleColor } from '../lib/muscleColor';
+import { exerciseLocation } from '../lib/location';
 
 type Props = { groups: Array<[string, Exercise[]]> };
 const { groups } = Astro.props;
@@ -14,6 +15,7 @@ const payload = groups.map(([muscle, list]) => ({
     primaryMuscle: exercise.primaryMuscle,
     exerciseType: exercise.exerciseType,
     isStretch: exercise.isStretch,
+    location: exerciseLocation(exercise),
     tint: muscleColor(exercise.primaryMuscle),
     frameUrl: frameUrl(exercise.slug, 1),
   })),
@@ -31,6 +33,7 @@ const payload = groups.map(([muscle, list]) => ({
   <button type="button" class="action-link focus-shell session-start" data-session-start>
     <span class="button-surface button-surface-dark" data-squircle data-radius="18">Start workout</span>
   </button>
+  <p class="session-builder-note" data-session-empty-note hidden>No exercises match your Home/Gym setting for this day. Switch to "All" to build a workout.</p>
 </div>
 
 <div class="session-overlay" data-session-overlay hidden>
@@ -74,6 +77,7 @@ const payload = groups.map(([muscle, list]) => ({
     primaryMuscle: string;
     exerciseType: string;
     isStretch: boolean;
+    location: 'home' | 'gym';
     tint: string;
     frameUrl: string;
   };
@@ -98,9 +102,13 @@ const payload = groups.map(([muscle, list]) => ({
     return items[Math.floor(Math.random() * items.length)];
   }
 
-  function buildSession(groups: MuscleGroup[], minutes: number): SessionStep[] {
+  function buildSession(groups: MuscleGroup[], minutes: number, location: string): SessionStep[] {
     const budget = minutes * 60;
     const pools = groups
+      .map((group) => ({
+        ...group,
+        exercises: location === 'all' ? group.exercises : group.exercises.filter((exercise) => exercise.location === location),
+      }))
       .filter((group) => group.exercises.length > 0)
       .map((group) => ({ list: shuffle(group.exercises), cursor: 0 }));
     const steps: SessionStep[] = [];
@@ -168,6 +176,12 @@ const payload = groups.map(([muscle, list]) => ({
   if (builder) {
     const groups = JSON.parse(builder.dataset.groups ?? '[]') as MuscleGroup[];
     let selectedMinutes = 20;
+    let currentLocation = localStorage.getItem('fitsplit-location') ?? 'all';
+    const emptyNote = builder.querySelector<HTMLElement>('[data-session-empty-note]');
+    document.addEventListener('fitsplit:location-change', ((event: CustomEvent<{ location: string }>) => {
+      currentLocation = event.detail.location;
+      if (emptyNote) emptyNote.hidden = true;
+    }) as EventListener);
     const durationButtons = Array.from(builder.querySelectorAll<HTMLButtonElement>('[data-duration]'));
     for (const btn of durationButtons) {
       if (btn.dataset.durationDefault !== undefined) btn.classList.add('is-selected');
@@ -274,8 +288,12 @@ const payload = groups.map(([muscle, list]) => ({
       }
 
       function openSession() {
-        steps = buildSession(groups, selectedMinutes);
-        if (steps.length === 0) return;
+        steps = buildSession(groups, selectedMinutes, currentLocation);
+        if (steps.length === 0) {
+          if (emptyNote) emptyNote.hidden = false;
+          return;
+        }
+        if (emptyNote) emptyNote.hidden = true;
         stepIndex = 0;
         phase = 'work';
         paused = false;

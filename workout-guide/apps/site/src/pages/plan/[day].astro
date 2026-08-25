@@ -1,6 +1,7 @@
 ---
 import { exercises } from '@bryllim/workout-guide';
 import ExerciseCard from '../../components/ExerciseCard.astro';
+import LocationToggle from '../../components/LocationToggle.astro';
 import SessionPlayer from '../../components/SessionPlayer.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { withBase } from '../../lib/paths';
@@ -43,14 +44,19 @@ const nextDay = weeklyPlan[dayIndex + 1];
 
     <p class="result-meta">{dayExercises.length} exercise{dayExercises.length === 1 ? '' : 's'} for {planDay.focus.toLowerCase()}</p>
 
+    <LocationToggle />
+
     <SessionPlayer groups={groups} />
 
-    {groups.map(([muscle, list]) => (
-      <div class="plan-muscle-group">
-        <h2>{muscle}</h2>
-        <div class="exercise-grid">{list.map((exercise) => <ExerciseCard exercise={exercise} />)}</div>
-      </div>
-    ))}
+    <div data-plan-groups>
+      {groups.map(([muscle, list]) => (
+        <div class="plan-muscle-group" data-plan-group>
+          <h2>{muscle}</h2>
+          <div class="exercise-grid">{list.map((exercise) => <ExerciseCard exercise={exercise} />)}</div>
+        </div>
+      ))}
+    </div>
+    <div class="empty-state" data-plan-empty hidden><h2>No matching exercises.</h2><p>Try switching back to "All" to see the full list for this day.</p></div>
 
     <div class="day-nav-links">
       {previousDay ? <a href={withBase(`plan/${previousDay.slug}/`)}>← {previousDay.day}</a> : <span />}
@@ -59,3 +65,29 @@ const nextDay = weeklyPlan[dayIndex + 1];
     </div>
   </section>
 </BaseLayout>
+
+<script>
+  const groups = Array.from(document.querySelectorAll<HTMLElement>('[data-plan-group]'));
+  const emptyState = document.querySelector<HTMLElement>('[data-plan-empty]');
+
+  function applyLocationFilter(location: string) {
+    let visibleTotal = 0;
+    for (const group of groups) {
+      const cards = Array.from(group.querySelectorAll<HTMLElement>('[data-exercise-card]'));
+      let visibleInGroup = 0;
+      for (const card of cards) {
+        const matches = location === 'all' || card.dataset.location === location;
+        card.hidden = !matches;
+        if (matches) visibleInGroup += 1;
+      }
+      group.hidden = visibleInGroup === 0;
+      visibleTotal += visibleInGroup;
+    }
+    if (emptyState) emptyState.hidden = visibleTotal !== 0;
+  }
+
+  applyLocationFilter(localStorage.getItem('fitsplit-location') ?? 'all');
+  document.addEventListener('fitsplit:location-change', ((event: CustomEvent<{ location: string }>) => {
+    applyLocationFilter(event.detail.location);
+  }) as EventListener);
+</script>

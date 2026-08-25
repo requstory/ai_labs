@@ -2,6 +2,7 @@
 import type { Exercise } from '@bryllim/workout-guide';
 import { frameUrl, withBase } from '../lib/paths';
 import { muscleColor } from '../lib/muscleColor';
+import { exerciseLocation } from '../lib/location';
 
 type Props = {
   exercise: Exercise;
@@ -23,6 +24,7 @@ const searchText = [
   data-equipment={exercise.equipment}
   data-muscle={exercise.primaryMuscle}
   data-type={exercise.exerciseType}
+  data-location={exerciseLocation(exercise)}
 >
   <a class="card-link focus-shell" href={withBase(`exercises/${exercise.slug}/`)}>
     <div class="card-surface" data-squircle data-radius="28">

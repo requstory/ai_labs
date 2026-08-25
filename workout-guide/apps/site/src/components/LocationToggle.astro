@@ -1,0 +1,28 @@
+<div class="day-switcher location-toggle" role="radiogroup" aria-label="Where are you training?" data-location-toggle>
+  <button type="button" class="day-pill day-pill-active" data-location-value="all">All</button>
+  <button type="button" class="day-pill" data-location-value="home">Home</button>
+  <button type="button" class="day-pill" data-location-value="gym">Gym</button>
+</div>
+
+<script>
+  const STORAGE_KEY = 'fitsplit-location';
+
+  for (const toggle of document.querySelectorAll<HTMLElement>('[data-location-toggle]')) {
+    const buttons = Array.from(toggle.querySelectorAll<HTMLButtonElement>('[data-location-value]'));
+    const stored = localStorage.getItem(STORAGE_KEY) ?? 'all';
+
+    const applySelection = (value: string, persist: boolean) => {
+      for (const button of buttons) button.classList.toggle('day-pill-active', button.dataset.locationValue === value);
+      if (persist) localStorage.setItem(STORAGE_KEY, value);
+      document.dispatchEvent(new CustomEvent('fitsplit:location-change', { detail: { location: value } }));
+    };
+
+    applySelection(stored, false);
+
+    for (const button of buttons) {
+      button.addEventListener('click', () => {
+        applySelection(button.dataset.locationValue ?? 'all', true);
+      });
+    }
+  }
+</script>

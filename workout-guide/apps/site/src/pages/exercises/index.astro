@@ -1,6 +1,7 @@
 ---
 import { exercises } from '@bryllim/workout-guide';
 import ExerciseCard from '../../components/ExerciseCard.astro';
+import LocationToggle from '../../components/LocationToggle.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
 const collator = new Intl.Collator('en');
@@ -14,6 +15,7 @@ const typeLabel = (type: string) => type.split('_').map((word) => word[0].toUppe
   <header class="page-intro page-shell"><div><p class="eyebrow">302 exercises</p><h1>Find the movement you need.</h1></div><p>Search the full library of strength, mobility, cardio, and stretch exercises.</p></header>
   <section class="page-shell gallery-section" aria-labelledby="gallery-title">
     <h2 class="sr-only" id="gallery-title">Exercise gallery</h2>
+    <LocationToggle />
     <form class="filter-panel" data-exercise-filters role="search">
       <label><span class="field-label">Search</span><span class="field-surface" data-squircle data-radius="19"><input type="search" name="q" placeholder="Name, equipment, or muscle" autocomplete="off" /></span></label>
       <label><span class="field-label">Equipment</span><span class="field-surface" data-squircle data-radius="19"><select name="equipment"><option value="">All equipment</option>{equipment.map((value) => <option value={value}>{value}</option>)}</select></span></label>
@@ -30,6 +32,7 @@ const typeLabel = (type: string) => type.split('_').map((word) => word[0].toUppe
     const resultCount = document.querySelector<HTMLElement>('#result-count');
     const emptyState = document.querySelector<HTMLElement>('[data-empty-state]');
     const normalize = (value: string) => value.toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    let locationValue = localStorage.getItem('fitsplit-location') ?? 'all';
     if (form) {
       const params = new URLSearchParams(window.location.search);
       for (const field of ['q', 'equipment', 'muscle', 'type']) {
@@ -45,7 +48,7 @@ const typeLabel = (type: string) => type.split('_').map((word) => word[0].toUppe
         let visible = 0;
         for (const card of cards) {
           const searchable = normalize(card.dataset.search ?? '');
-          const matches = tokens.every((token) => searchable.includes(token)) && (!equipmentValue || card.dataset.equipment === equipmentValue) && (!muscleValue || card.dataset.muscle === muscleValue) && (!typeValue || card.dataset.type === typeValue);
+          const matches = tokens.every((token) => searchable.includes(token)) && (!equipmentValue || card.dataset.equipment === equipmentValue) && (!muscleValue || card.dataset.muscle === muscleValue) && (!typeValue || card.dataset.type === typeValue) && (locationValue === 'all' || card.dataset.location === locationValue);
           card.hidden = !matches;
           if (matches) visible += 1;
         }
@@ -59,6 +62,10 @@ const typeLabel = (type: string) => type.split('_').map((word) => word[0].toUppe
         const nextUrl = nextParams.size ? `${window.location.pathname}?${nextParams}` : window.location.pathname;
         window.history.replaceState({}, '', nextUrl);
       };
+      document.addEventListener('fitsplit:location-change', ((event: CustomEvent<{ location: string }>) => {
+        locationValue = event.detail.location;
+        update();
+      }) as EventListener);
       form.addEventListener('input', update);
       form.addEventListener('change', update);
       update();
