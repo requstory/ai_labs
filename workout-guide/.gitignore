@@ -3,3 +3,4 @@ dist/
 .astro/
 apps/site/public/frames/
 apps/site/public/og.png
+apps/site/public/icons/

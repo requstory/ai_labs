@@ -1,0 +1,51 @@
+<div class="cta-surface install-card" data-squircle data-radius="52" data-install-card>
+  <div>
+    <p class="eyebrow">Take it with you</p>
+    <h2>Add FitSplit to your home screen.</h2>
+    <p>Works offline, opens instantly, and feels like an app — because it is one.</p>
+    <p class="install-hint" data-install-hint>Look for "Add to Home Screen" or "Install app" in your browser's menu.</p>
+  </div>
+  <div class="section-actions">
+    <button type="button" class="action-link focus-shell" data-install-button hidden>
+      <span class="button-surface button-surface-light" data-squircle data-radius="18">Install FitSplit</span>
+    </button>
+  </div>
+</div>
+
+<script>
+  const card = document.querySelector<HTMLElement>('[data-install-card]');
+  const button = document.querySelector<HTMLButtonElement>('[data-install-button]');
+  const hint = document.querySelector<HTMLElement>('[data-install-hint]');
+
+  if (card && button && hint) {
+    const nav = navigator as Navigator & { standalone?: boolean };
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || nav.standalone === true;
+
+    if (isStandalone) {
+      card.hidden = true;
+    } else {
+      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      if (isIOS) {
+        hint.textContent = 'Tap the Share icon, then "Add to Home Screen".';
+      } else {
+        let deferredPrompt: Event & { prompt?: () => Promise<void> } | null = null;
+        window.addEventListener('beforeinstallprompt', (event) => {
+          event.preventDefault();
+          deferredPrompt = event;
+          hint.hidden = true;
+          button.hidden = false;
+        });
+        button.addEventListener('click', async () => {
+          if (!deferredPrompt?.prompt) return;
+          await deferredPrompt.prompt();
+          deferredPrompt = null;
+          button.hidden = true;
+          hint.hidden = false;
+        });
+        window.addEventListener('appinstalled', () => {
+          card.hidden = true;
+        });
+      }
+    }
+  }
+</script>

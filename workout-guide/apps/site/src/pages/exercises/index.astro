@@ -10,8 +10,8 @@ const types = [...new Set(exercises.map((exercise) => exercise.exerciseType))].s
 const typeLabel = (type: string) => type.split('_').map((word) => word[0].toUpperCase() + word.slice(1)).join(' ');
 ---
 
-<BaseLayout title="Exercise gallery — Workout Guide" description="Search and filter 302 open exercise illustrations by name, equipment, muscle, and exercise type.">
-  <header class="page-intro page-shell"><div><p class="eyebrow">302 exercises · 906 frames</p><h1>Find the movement you need.</h1></div><p>Search a complete, consistent library of strength, mobility, cardio, and stretch illustrations.</p></header>
+<BaseLayout title="Exercise library — FitSplit" description="Search and filter 302 illustrated exercises by name, equipment, muscle, and exercise type.">
+  <header class="page-intro page-shell"><div><p class="eyebrow">302 exercises</p><h1>Find the movement you need.</h1></div><p>Search the full library of strength, mobility, cardio, and stretch exercises.</p></header>
   <section class="page-shell gallery-section" aria-labelledby="gallery-title">
     <h2 class="sr-only" id="gallery-title">Exercise gallery</h2>
     <form class="filter-panel" data-exercise-filters role="search">

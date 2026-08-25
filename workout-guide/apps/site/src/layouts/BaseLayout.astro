@@ -13,6 +13,7 @@ type Props = {
 const { title, description, image = withBase('og.svg') } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const socialImage = new URL(image.replace(/^\//, ''), Astro.site);
+const swPath = withBase('sw.js');
 ---
 
 <!doctype html>
@@ -21,7 +22,6 @@ const socialImage = new URL(image.replace(/^\//, ''), Astro.site);
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <meta name="author" content="Bryl Lim" />
     <meta name="theme-color" content="#101010" />
     <meta name="description" content={description} />
     <meta property="og:type" content="website" />
@@ -32,6 +32,12 @@ const socialImage = new URL(image.replace(/^\//, ''), Astro.site);
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href={withBase('favicon.svg')} type="image/svg+xml" />
+    <link rel="manifest" href={withBase('manifest.webmanifest')} />
+    <link rel="apple-touch-icon" href={withBase('icons/apple-touch-icon.png')} />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="FitSplit" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <title>{title}</title>
   </head>
   <body>
@@ -41,7 +47,15 @@ const socialImage = new URL(image.replace(/^\//, ''), Astro.site);
       <slot />
     </main>
     <Footer />
-    <div class="sr-only" id="copy-status" role="status" aria-live="polite"></div>
+    <script define:vars={{ swPath }} is:inline>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register(swPath).catch(() => {
+            // Offline support is a progressive enhancement; ignore registration failures.
+          });
+        });
+      }
+    </script>
     <script>
       import { getSvgPath } from 'figma-squircle';
 
@@ -118,20 +132,6 @@ const socialImage = new URL(image.replace(/^\//, ''), Astro.site);
           requestAnimationFrame(tick);
         };
         requestAnimationFrame(tick);
-      }
-
-      const copyStatus = document.querySelector<HTMLElement>('#copy-status');
-      for (const button of document.querySelectorAll<HTMLButtonElement>('[data-copy-text]')) {
-        button.addEventListener('click', async () => {
-          const text = button.dataset.copyText ?? '';
-          await navigator.clipboard.writeText(text);
-          const label = button.querySelector<HTMLElement>('[data-copy-label]');
-          if (label) label.textContent = 'Copied';
-          if (copyStatus) copyStatus.textContent = 'Copied code to clipboard.';
-          window.setTimeout(() => {
-            if (label) label.textContent = button.dataset.defaultLabel ?? 'Copy';
-          }, 1600);
-        });
       }
     </script>
   </body>

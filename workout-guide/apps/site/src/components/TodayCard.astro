@@ -1,0 +1,84 @@
+---
+import { exercises } from '@bryllim/workout-guide';
+import { frameUrl, withBase } from '../lib/paths';
+import { planDayColor } from '../lib/muscleColor';
+import { getPlanExercises, weeklyPlan } from '../lib/weeklyPlan';
+
+const payload = weeklyPlan.map((planDay) => {
+  const dayExercises = getPlanExercises(planDay, exercises);
+  const preview = dayExercises[0];
+  return {
+    slug: planDay.slug,
+    day: planDay.day,
+    focus: planDay.focus,
+    count: dayExercises.length,
+    tint: planDayColor(planDay.slug),
+    previewFrame: preview ? frameUrl(preview.slug, 1) : null,
+  };
+});
+const planBase = withBase('plan/');
+---
+
+<div class="today-card" data-squircle data-radius="32" data-today-card data-plan={JSON.stringify(payload)} data-plan-base={planBase}>
+  <div class="today-card-label">
+    <span>Today</span>
+    <span data-today-date>Monday</span>
+  </div>
+  <div class="today-card-body">
+    <div class="today-card-stage" data-squircle data-radius="24">
+      <span class="frame-mask" data-today-preview aria-hidden="true"></span>
+    </div>
+    <div class="today-card-copy">
+      <p class="eyebrow" data-today-day>Monday</p>
+      <h2 data-today-focus>Chest &amp; Triceps</h2>
+      <p data-today-count>Loading your plan…</p>
+    </div>
+  </div>
+  <a class="action-link focus-shell today-card-cta" data-today-link href={withBase('plan/monday/')}>
+    <span class="button-surface button-surface-dark" data-squircle data-radius="18" data-today-cta-label>See today's workout</span>
+  </a>
+</div>
+
+<script>
+  const card = document.querySelector<HTMLElement>('[data-today-card]');
+  if (card) {
+    type PlanEntry = { slug: string; day: string; focus: string; count: number; tint: string; previewFrame: string | null };
+    const plan = JSON.parse(card.dataset.plan ?? '[]') as PlanEntry[];
+    const planBase = card.dataset.planBase ?? '';
+
+    const jsDay = new Date().getDay();
+    const weekdayIndex = jsDay - 1;
+    const entry = weekdayIndex >= 0 && weekdayIndex < plan.length ? plan[weekdayIndex] : null;
+    const weekdayName = new Date().toLocaleDateString(undefined, { weekday: 'long' });
+
+    const dateLabel = card.querySelector<HTMLElement>('[data-today-date]');
+    const dayLabel = card.querySelector<HTMLElement>('[data-today-day]');
+    const focusLabel = card.querySelector<HTMLElement>('[data-today-focus]');
+    const countLabel = card.querySelector<HTMLElement>('[data-today-count]');
+    const preview = card.querySelector<HTMLElement>('[data-today-preview]');
+    const link = card.querySelector<HTMLAnchorElement>('[data-today-link]');
+    const ctaLabel = card.querySelector<HTMLElement>('[data-today-cta-label]');
+
+    if (dateLabel) dateLabel.textContent = weekdayName;
+
+    if (entry) {
+      if (dayLabel) dayLabel.textContent = entry.day;
+      if (focusLabel) focusLabel.textContent = entry.focus;
+      if (countLabel) countLabel.textContent = `${entry.count} exercises`;
+      if (preview && entry.previewFrame) {
+        preview.style.setProperty('--frame-tint', entry.tint);
+        preview.style.setProperty('mask-image', `url(${entry.previewFrame})`);
+        preview.style.setProperty('-webkit-mask-image', `url(${entry.previewFrame})`);
+      }
+      if (link) link.href = `${planBase}${entry.slug}/`;
+      if (ctaLabel) ctaLabel.textContent = "See today's workout";
+    } else {
+      if (dayLabel) dayLabel.textContent = weekdayName;
+      if (focusLabel) focusLabel.textContent = 'Rest day';
+      if (countLabel) countLabel.textContent = 'Recover today, or get a head start on next week.';
+      if (preview) preview.style.setProperty('background-color', 'transparent');
+      if (link) link.href = planBase;
+      if (ctaLabel) ctaLabel.textContent = 'View the weekly plan';
+    }
+  }
+</script>
