@@ -1,6 +1,6 @@
 ---
 import type { Exercise } from '@bryllim/workout-guide';
-import { frameUrl } from '../lib/paths';
+import { frameUrl, withBase } from '../lib/paths';
 import { muscleColor } from '../lib/muscleColor';
 import { exerciseLocation } from '../lib/location';
 
@@ -22,7 +22,7 @@ const payload = groups.map(([muscle, list]) => ({
 }));
 ---
 
-<div class="session-builder" data-squircle data-radius="32" data-session-builder data-groups={JSON.stringify(payload)}>
+<div class="session-builder" data-squircle data-radius="32" data-session-builder data-groups={JSON.stringify(payload)} data-audio-base={withBase('audio/')}>
   <p class="eyebrow">How much time do you have?</p>
   <div class="duration-picker" role="radiogroup" aria-label="Workout length">
     <button type="button" data-duration="10">10 min</button>
@@ -214,6 +214,28 @@ const payload = groups.map(([muscle, list]) => ({
 
       if (muteButton) muteButton.textContent = muted ? '🔇' : '🔊';
 
+      const TRACK_FILES = ['getting-it-done.mp3', 'neon-laser-horizon.mp3', 'rocket-power.mp3', 'werq.mp3'];
+      const audioBase = builder.dataset.audioBase ?? '';
+      let musicEl: HTMLAudioElement | null = null;
+
+      function startMusic() {
+        if (muted) return;
+        const file = TRACK_FILES[Math.floor(Math.random() * TRACK_FILES.length)];
+        musicEl = new Audio(`${audioBase}${file}`);
+        musicEl.loop = true;
+        musicEl.volume = 0.35;
+        musicEl.play().catch(() => {
+          // Autoplay can still be blocked in rare cases; the workout continues without music.
+        });
+      }
+
+      function stopMusic() {
+        if (musicEl) {
+          musicEl.pause();
+          musicEl = null;
+        }
+      }
+
       let steps: SessionStep[] = [];
       let stepIndex = 0;
       let phase: 'work' | 'rest' = 'work';
@@ -298,6 +320,7 @@ const payload = groups.map(([muscle, list]) => ({
 
       function finishSession() {
         if (intervalId) window.clearInterval(intervalId);
+        stopMusic();
         cues.finish();
         const totalSeconds = steps.reduce((sum, s) => sum + s.workSeconds + s.restSeconds, 0);
         const minutesTaken = Math.max(1, Math.round(totalSeconds / 60));
@@ -325,10 +348,12 @@ const payload = groups.map(([muscle, list]) => ({
         renderStep();
         cues.workStart();
         startPhaseTimer(steps[0].workSeconds);
+        startMusic();
       }
 
       function closeSession() {
         if (intervalId) window.clearInterval(intervalId);
+        stopMusic();
         sessionOverlay.hidden = true;
         document.body.style.overflow = '';
       }
@@ -339,6 +364,10 @@ const payload = groups.map(([muscle, list]) => ({
       pauseButton?.addEventListener('click', () => {
         paused = !paused;
         if (pauseButton) pauseButton.textContent = paused ? 'Resume' : 'Pause';
+        if (musicEl) {
+          if (paused) musicEl.pause();
+          else if (!muted) musicEl.play().catch(() => {});
+        }
       });
       skipButton?.addEventListener('click', () => {
         if (intervalId) window.clearInterval(intervalId);
@@ -348,6 +377,11 @@ const payload = groups.map(([muscle, list]) => ({
         muted = !muted;
         localStorage.setItem('fitsplit-muted', muted ? '1' : '0');
         if (muteButton) muteButton.textContent = muted ? '🔇' : '🔊';
+        if (!sessionOverlay.hidden && !paused) {
+          if (muted) musicEl?.pause();
+          else if (musicEl) musicEl.play().catch(() => {});
+          else startMusic();
+        }
       });
     }
   }
