@@ -1,0 +1,316 @@
+---
+import type { Exercise } from '@bryllim/workout-guide';
+import { frameUrl } from '../lib/paths';
+import { muscleColor } from '../lib/muscleColor';
+
+type Props = { groups: Array<[string, Exercise[]]> };
+const { groups } = Astro.props;
+
+const payload = groups.map(([muscle, list]) => ({
+  muscle,
+  exercises: list.map((exercise) => ({
+    slug: exercise.slug,
+    name: exercise.name,
+    primaryMuscle: exercise.primaryMuscle,
+    exerciseType: exercise.exerciseType,
+    isStretch: exercise.isStretch,
+    tint: muscleColor(exercise.primaryMuscle),
+    frameUrl: frameUrl(exercise.slug, 1),
+  })),
+}));
+---
+
+<div class="session-builder" data-squircle data-radius="32" data-session-builder data-groups={JSON.stringify(payload)}>
+  <p class="eyebrow">How much time do you have?</p>
+  <div class="duration-picker" role="radiogroup" aria-label="Workout length">
+    <button type="button" data-duration="10">10 min</button>
+    <button type="button" data-duration="20" data-duration-default>20 min</button>
+    <button type="button" data-duration="30">30 min</button>
+    <button type="button" data-duration="45">45 min</button>
+  </div>
+  <button type="button" class="action-link focus-shell session-start" data-session-start>
+    <span class="button-surface button-surface-dark" data-squircle data-radius="18">Start workout</span>
+  </button>
+</div>
+
+<div class="session-overlay" data-session-overlay hidden>
+  <div class="session-overlay-inner" data-session-player>
+    <div class="session-top">
+      <button type="button" class="session-icon-btn" data-session-close aria-label="Exit workout">✕</button>
+      <div class="session-progress" data-session-progress>Step 1 of 1</div>
+      <button type="button" class="session-icon-btn" data-session-mute aria-label="Mute sounds">🔊</button>
+    </div>
+    <div class="session-progress-bar"><div class="session-progress-fill" data-session-progress-fill></div></div>
+
+    <div class="session-stage" data-squircle data-radius="48">
+      <span class="frame-mask" data-session-preview aria-hidden="true"></span>
+    </div>
+
+    <p class="session-muscle" data-session-muscle>&nbsp;</p>
+    <h2 class="session-name" data-session-name>&nbsp;</h2>
+
+    <div class="session-timer" data-session-timer>0:00</div>
+    <p class="session-target" data-session-target>&nbsp;</p>
+
+    <div class="session-controls">
+      <button type="button" class="session-control-btn" data-session-skip>Skip</button>
+      <button type="button" class="session-control-btn session-control-btn-primary" data-session-pause>Pause</button>
+    </div>
+  </div>
+
+  <div class="session-complete" data-session-complete hidden>
+    <h2>Nice work.</h2>
+    <p data-session-summary>&nbsp;</p>
+    <button type="button" class="action-link focus-shell" data-session-done>
+      <span class="button-surface button-surface-dark" data-squircle data-radius="18">Done</span>
+    </button>
+  </div>
+</div>
+
+<script>
+  type SessionExercise = {
+    slug: string;
+    name: string;
+    primaryMuscle: string;
+    exerciseType: string;
+    isStretch: boolean;
+    tint: string;
+    frameUrl: string;
+  };
+  type MuscleGroup = { muscle: string; exercises: SessionExercise[] };
+  type SessionStep = { exercise: SessionExercise; label: string; workSeconds: number; restSeconds: number };
+
+  const REP_TARGETS = [10, 12, 15];
+  const HOLD_SECONDS = [20, 30, 40];
+  const REST_SECONDS = 15;
+  const WORK_SECONDS_REPS = 40;
+
+  function shuffle<T>(items: T[]): T[] {
+    const arr = items.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function pick<T>(items: T[]): T {
+    return items[Math.floor(Math.random() * items.length)];
+  }
+
+  function buildSession(groups: MuscleGroup[], minutes: number): SessionStep[] {
+    const budget = minutes * 60;
+    const pools = groups
+      .filter((group) => group.exercises.length > 0)
+      .map((group) => ({ list: shuffle(group.exercises), cursor: 0 }));
+    const steps: SessionStep[] = [];
+    let elapsed = 0;
+    let index = 0;
+    let guard = 0;
+    while (elapsed < budget && pools.length > 0 && guard < 400) {
+      guard++;
+      const pool = pools[index % pools.length];
+      const exercise = pool.list[pool.cursor % pool.list.length];
+      pool.cursor++;
+      const isHold = exercise.exerciseType === 'duration' || exercise.exerciseType === 'distance_duration' || exercise.isStretch;
+      const workSeconds = isHold ? pick(HOLD_SECONDS) : WORK_SECONDS_REPS;
+      const label = isHold ? 'Hold the position' : `~${pick(REP_TARGETS)} reps`;
+      steps.push({ exercise, label, workSeconds, restSeconds: REST_SECONDS });
+      elapsed += workSeconds + REST_SECONDS;
+      index++;
+    }
+    return steps;
+  }
+
+  let audioCtx: AudioContext | null = null;
+  let muted = localStorage.getItem('fitsplit-muted') === '1';
+
+  function ensureAudio(): AudioContext | null {
+    if (muted) return null;
+    const Ctor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Ctor) return null;
+    if (!audioCtx) audioCtx = new Ctor();
+    if (audioCtx.state === 'suspended') void audioCtx.resume();
+    return audioCtx;
+  }
+
+  function tone(freq: number, duration: number, delay = 0, type: OscillatorType = 'sine', gain = 0.16) {
+    const ctx = ensureAudio();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    osc.connect(g).connect(ctx.destination);
+    const start = ctx.currentTime + delay;
+    g.gain.setValueAtTime(0.0001, start);
+    g.gain.exponentialRampToValueAtTime(gain, start + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    osc.start(start);
+    osc.stop(start + duration + 0.05);
+  }
+
+  const cues = {
+    workStart: () => {
+      tone(523.25, 0.18);
+      tone(783.99, 0.22, 0.08);
+    },
+    restStart: () => tone(392, 0.3, 0, 'sine', 0.14),
+    countdownBeep: () => tone(880, 0.08, 0, 'square', 0.09),
+    finish: () => {
+      tone(523.25, 0.16);
+      tone(659.25, 0.16, 0.14);
+      tone(783.99, 0.26, 0.28);
+    },
+  };
+
+  const builder = document.querySelector<HTMLElement>('[data-session-builder]');
+  if (builder) {
+    const groups = JSON.parse(builder.dataset.groups ?? '[]') as MuscleGroup[];
+    let selectedMinutes = 20;
+    const durationButtons = Array.from(builder.querySelectorAll<HTMLButtonElement>('[data-duration]'));
+    for (const btn of durationButtons) {
+      if (btn.dataset.durationDefault !== undefined) btn.classList.add('is-selected');
+      btn.addEventListener('click', () => {
+        selectedMinutes = Number(btn.dataset.duration);
+        for (const b of durationButtons) b.classList.toggle('is-selected', b === btn);
+      });
+    }
+
+    const overlay = document.querySelector<HTMLElement>('[data-session-overlay]');
+    const startButton = builder.querySelector<HTMLButtonElement>('[data-session-start]');
+
+    if (overlay && startButton) {
+      const sessionOverlay = overlay;
+      const stage = overlay.querySelector<HTMLElement>('[data-session-preview]');
+      const nameEl = overlay.querySelector<HTMLElement>('[data-session-name]');
+      const muscleEl = overlay.querySelector<HTMLElement>('[data-session-muscle]');
+      const targetEl = overlay.querySelector<HTMLElement>('[data-session-target]');
+      const timerEl = overlay.querySelector<HTMLElement>('[data-session-timer]');
+      const progressEl = overlay.querySelector<HTMLElement>('[data-session-progress]');
+      const progressFillEl = overlay.querySelector<HTMLElement>('[data-session-progress-fill]');
+      const pauseButton = overlay.querySelector<HTMLButtonElement>('[data-session-pause]');
+      const skipButton = overlay.querySelector<HTMLButtonElement>('[data-session-skip]');
+      const closeButton = overlay.querySelector<HTMLButtonElement>('[data-session-close]');
+      const muteButton = overlay.querySelector<HTMLButtonElement>('[data-session-mute]');
+      const doneButton = overlay.querySelector<HTMLButtonElement>('[data-session-done]');
+      const completeView = overlay.querySelector<HTMLElement>('[data-session-complete]');
+      const summaryEl = overlay.querySelector<HTMLElement>('[data-session-summary]');
+      const playerView = overlay.querySelector<HTMLElement>('[data-session-player]');
+
+      if (muteButton) muteButton.textContent = muted ? '🔇' : '🔊';
+
+      let steps: SessionStep[] = [];
+      let stepIndex = 0;
+      let phase: 'work' | 'rest' = 'work';
+      let remaining = 0;
+      let paused = false;
+      let intervalId: number | null = null;
+
+      const formatTime = (seconds: number) => {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m}:${String(s).padStart(2, '0')}`;
+      };
+
+      function renderStep() {
+        const step = steps[stepIndex];
+        if (!step) return;
+        if (nameEl) nameEl.textContent = step.exercise.name;
+        if (muscleEl) muscleEl.textContent = step.exercise.primaryMuscle;
+        if (targetEl) targetEl.textContent = phase === 'work' ? step.label : 'Rest';
+        if (stage) {
+          stage.style.setProperty('--frame-tint', step.exercise.tint);
+          stage.style.setProperty('mask-image', `url(${step.exercise.frameUrl})`);
+          stage.style.setProperty('-webkit-mask-image', `url(${step.exercise.frameUrl})`);
+        }
+        if (progressEl) progressEl.textContent = `Step ${stepIndex + 1} of ${steps.length}`;
+        if (progressFillEl) progressFillEl.style.width = `${(stepIndex / steps.length) * 100}%`;
+      }
+
+      function startPhaseTimer(seconds: number) {
+        remaining = seconds;
+        if (timerEl) timerEl.textContent = formatTime(remaining);
+        if (intervalId) window.clearInterval(intervalId);
+        intervalId = window.setInterval(tick, 1000);
+      }
+
+      function tick() {
+        if (paused) return;
+        remaining -= 1;
+        if (remaining <= 3 && remaining > 0) cues.countdownBeep();
+        if (timerEl) timerEl.textContent = formatTime(Math.max(remaining, 0));
+        if (remaining <= 0) advancePhase();
+      }
+
+      function advancePhase() {
+        if (phase === 'work') {
+          phase = 'rest';
+          cues.restStart();
+          renderStep();
+          startPhaseTimer(steps[stepIndex].restSeconds);
+        } else {
+          stepIndex += 1;
+          if (stepIndex >= steps.length) {
+            finishSession();
+            return;
+          }
+          phase = 'work';
+          cues.workStart();
+          renderStep();
+          startPhaseTimer(steps[stepIndex].workSeconds);
+        }
+      }
+
+      function finishSession() {
+        if (intervalId) window.clearInterval(intervalId);
+        cues.finish();
+        const totalSeconds = steps.reduce((sum, s) => sum + s.workSeconds + s.restSeconds, 0);
+        const minutesTaken = Math.max(1, Math.round(totalSeconds / 60));
+        if (summaryEl) summaryEl.textContent = `You completed ${steps.length} exercises in about ${minutesTaken} minutes.`;
+        if (progressFillEl) progressFillEl.style.width = '100%';
+        if (playerView) playerView.hidden = true;
+        if (completeView) completeView.hidden = false;
+      }
+
+      function openSession() {
+        steps = buildSession(groups, selectedMinutes);
+        if (steps.length === 0) return;
+        stepIndex = 0;
+        phase = 'work';
+        paused = false;
+        if (pauseButton) pauseButton.textContent = 'Pause';
+        if (playerView) playerView.hidden = false;
+        if (completeView) completeView.hidden = true;
+        sessionOverlay.hidden = false;
+        document.body.style.overflow = 'hidden';
+        renderStep();
+        cues.workStart();
+        startPhaseTimer(steps[0].workSeconds);
+      }
+
+      function closeSession() {
+        if (intervalId) window.clearInterval(intervalId);
+        sessionOverlay.hidden = true;
+        document.body.style.overflow = '';
+      }
+
+      startButton.addEventListener('click', openSession);
+      closeButton?.addEventListener('click', closeSession);
+      doneButton?.addEventListener('click', closeSession);
+      pauseButton?.addEventListener('click', () => {
+        paused = !paused;
+        if (pauseButton) pauseButton.textContent = paused ? 'Resume' : 'Pause';
+      });
+      skipButton?.addEventListener('click', () => {
+        if (intervalId) window.clearInterval(intervalId);
+        advancePhase();
+      });
+      muteButton?.addEventListener('click', () => {
+        muted = !muted;
+        localStorage.setItem('fitsplit-muted', muted ? '1' : '0');
+        if (muteButton) muteButton.textContent = muted ? '🔇' : '🔊';
+      });
+    }
+  }
+</script>

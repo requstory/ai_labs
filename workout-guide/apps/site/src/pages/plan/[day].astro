@@ -1,6 +1,7 @@
 ---
 import { exercises } from '@bryllim/workout-guide';
 import ExerciseCard from '../../components/ExerciseCard.astro';
+import SessionPlayer from '../../components/SessionPlayer.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { withBase } from '../../lib/paths';
 import { getPlanExercises, groupByMuscle, weeklyPlan, type PlanDay } from '../../lib/weeklyPlan';
@@ -41,6 +42,8 @@ const nextDay = weeklyPlan[dayIndex + 1];
     </nav>
 
     <p class="result-meta">{dayExercises.length} exercise{dayExercises.length === 1 ? '' : 's'} for {planDay.focus.toLowerCase()}</p>
+
+    <SessionPlayer groups={groups} />
 
     {groups.map(([muscle, list]) => (
       <div class="plan-muscle-group">
