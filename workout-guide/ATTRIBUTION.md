@@ -23,3 +23,13 @@ Each is licensed under
 - "Neon Laser Horizon" by Kevin MacLeod (incompetech.com)
 - "Rocket Power" by Kevin MacLeod (incompetech.com)
 - "Werq" by Kevin MacLeod (incompetech.com)
+
+Five more tracks were downloaded from [Pixabay](https://pixabay.com/music/) and
+re-encoded the same way. The Pixabay Content License does not require
+attribution, but it's given anyway:
+
+- "Workout - Workout Music" by AtlasAudio (pixabay.com)
+- "Workout" by The_Mountain (pixabay.com)
+- "Workout" by SoundSurfer (pixabay.com)
+- "Workout" by Sub_Clair (pixabay.com)
+- "Workout - Workout Music" by Vaitsez (pixabay.com)

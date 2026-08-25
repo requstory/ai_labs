@@ -73,4 +73,96 @@ await Promise.all([
   sharp(iconSource).resize(180, 180).flatten({ background: '#101010' }).png().toFile(join(targetIcons, 'apple-touch-icon.png')),
 ]);
 
-console.log('Synced 906 site frames, generated social artwork, and generated PWA icons.');
+const swVersion = `fitsplit-${Date.now()}`;
+const swSource = `const CACHE_VERSION = ${JSON.stringify(swVersion)};
+const APP_SHELL = [
+  './',
+  './plan/',
+  './plan/monday/',
+  './plan/tuesday/',
+  './plan/wednesday/',
+  './plan/thursday/',
+  './plan/friday/',
+  './exercises/',
+  './manifest.webmanifest',
+  './favicon.svg',
+];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    (async () => {
+      const scopeUrl = new URL(self.registration.scope);
+      const cache = await caches.open(CACHE_VERSION);
+      const urls = APP_SHELL.map((path) => new URL(path, scopeUrl).toString());
+      try {
+        await cache.addAll(urls);
+      } catch {
+        // A missing shell URL shouldn't block installation of what we could cache.
+      }
+      await self.skipWaiting();
+    })(),
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((key) => key !== CACHE_VERSION).map((key) => caches.delete(key)));
+      await self.clients.claim();
+    })(),
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+
+  // Navigations (the HTML documents themselves) always prefer the network so a
+  // deploy is visible on the next load; the cache is only a fallback when offline.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(CACHE_VERSION);
+        try {
+          const response = await fetch(request);
+          if (response.ok) cache.put(request, response.clone());
+          return response;
+        } catch {
+          const cached = await cache.match(request);
+          if (cached) return cached;
+          const fallback = await cache.match(new URL('./', self.registration.scope).toString());
+          if (fallback) return fallback;
+          return new Response('Offline', { status: 503, statusText: 'Offline' });
+        }
+      })(),
+    );
+    return;
+  }
+
+  // Everything else (hashed JS/CSS bundles, SVG frames, audio, icons) is safe to
+  // serve stale-while-revalidate: it either never changes or is content-hashed.
+  event.respondWith(
+    (async () => {
+      const cache = await caches.open(CACHE_VERSION);
+      const cached = await cache.match(request);
+      const network = fetch(request)
+        .then((response) => {
+          if (response.ok) cache.put(request, response.clone());
+          return response;
+        })
+        .catch(() => undefined);
+
+      if (cached) return cached;
+      const response = await network;
+      return response ?? new Response('Offline', { status: 503, statusText: 'Offline' });
+    })(),
+  );
+});
+`;
+
+await writeFile(join(sitePublic, 'sw.js'), swSource);
+
+console.log('Synced 906 site frames, generated social artwork, PWA icons, and service worker.');
