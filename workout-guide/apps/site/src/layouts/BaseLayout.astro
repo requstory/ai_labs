@@ -104,7 +104,7 @@ const swPath = withBase('sw.js');
               else active.delete(entry.target as HTMLElement);
             }
           },
-          { threshold: 0.1 },
+          { threshold: 0, rootMargin: '200px 0px' },
         );
         for (const element of state.keys()) frameObserver.observe(element);
 
