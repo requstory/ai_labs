@@ -1,0 +1,58 @@
+---
+import { exercises } from '@bryllim/workout-guide';
+import ExerciseCard from '../../components/ExerciseCard.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { withBase } from '../../lib/paths';
+import { getPlanExercises, groupByMuscle, weeklyPlan, type PlanDay } from '../../lib/weeklyPlan';
+
+export function getStaticPaths() {
+  return weeklyPlan.map((planDay) => ({ params: { day: planDay.slug }, props: { planDay } }));
+}
+
+type Props = { planDay: PlanDay };
+const { planDay } = Astro.props;
+const dayExercises = getPlanExercises(planDay, exercises);
+const groups = groupByMuscle(planDay, dayExercises);
+const dayIndex = weeklyPlan.findIndex((day) => day.slug === planDay.slug);
+const previousDay = weeklyPlan[dayIndex - 1];
+const nextDay = weeklyPlan[dayIndex + 1];
+---
+
+<BaseLayout
+  title={`${planDay.day} — ${planDay.focus} — Workout Guide`}
+  description={`${planDay.description} ${dayExercises.length} illustrated exercises for ${planDay.focus}.`}
+>
+  <header class="page-intro page-shell">
+    <div>
+      <p class="eyebrow">{planDay.day}</p>
+      <h1>{planDay.focus}</h1>
+    </div>
+    <p>{planDay.description}</p>
+  </header>
+
+  <section class="page-shell section" aria-labelledby="day-title">
+    <h2 class="sr-only" id="day-title">{planDay.day} exercises</h2>
+    <nav class="day-switcher" aria-label="Choose a day">
+      {weeklyPlan.map((day) => (
+        <a class:list={['day-pill', { 'day-pill-active': day.slug === planDay.slug }]} href={withBase(`plan/${day.slug}/`)} aria-current={day.slug === planDay.slug ? 'page' : undefined}>
+          {day.day}
+        </a>
+      ))}
+    </nav>
+
+    <p class="result-meta">{dayExercises.length} exercise{dayExercises.length === 1 ? '' : 's'} for {planDay.focus.toLowerCase()}</p>
+
+    {groups.map(([muscle, list]) => (
+      <div class="plan-muscle-group">
+        <h2>{muscle}</h2>
+        <div class="exercise-grid">{list.map((exercise) => <ExerciseCard exercise={exercise} />)}</div>
+      </div>
+    ))}
+
+    <div class="day-nav-links">
+      {previousDay ? <a href={withBase(`plan/${previousDay.slug}/`)}>← {previousDay.day}</a> : <span />}
+      <a href={withBase('plan/')}>All days</a>
+      {nextDay ? <a href={withBase(`plan/${nextDay.slug}/`)}>{nextDay.day} →</a> : <span />}
+    </div>
+  </section>
+</BaseLayout>

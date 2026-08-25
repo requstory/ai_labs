@@ -1,0 +1,51 @@
+---
+import { exercises } from '@bryllim/workout-guide';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { frameUrl, withBase } from '../../lib/paths';
+import { getPlanExercises, weeklyPlan } from '../../lib/weeklyPlan';
+
+const days = weeklyPlan.map((planDay) => {
+  const dayExercises = getPlanExercises(planDay, exercises);
+  return { planDay, count: dayExercises.length, preview: dayExercises[0] };
+});
+---
+
+<BaseLayout
+  title="Weekly workout plan — Workout Guide"
+  description="A Monday-to-Friday training split. Pick a day to see exactly which body parts to work and every exercise that fits."
+>
+  <header class="page-intro page-shell">
+    <div>
+      <p class="eyebrow">Monday – Friday</p>
+      <h1>Plan your training week.</h1>
+    </div>
+    <p>A simple five-day split built from the full exercise library. Pick a day to see the muscles it targets and every illustrated movement for it.</p>
+  </header>
+
+  <section class="page-shell section" aria-labelledby="plan-title">
+    <h2 class="sr-only" id="plan-title">Days of the week</h2>
+    <div class="plan-grid">
+      {days.map(({ planDay, count, preview }) => (
+        <a class="plan-card focus-shell" data-squircle data-radius="36" href={withBase(`plan/${planDay.slug}/`)}>
+          <div class="plan-card-stage" data-squircle data-radius="26">
+            {preview && (
+              <img
+                src={frameUrl(preview.slug, 1)}
+                data-frames={JSON.stringify(preview.frames.map((frame) => frameUrl(preview.slug, frame)))}
+                alt=""
+                width="512"
+                height="512"
+                loading="lazy"
+              />
+            )}
+          </div>
+          <div class="plan-card-copy">
+            <p class="eyebrow">{planDay.day}</p>
+            <h2>{planDay.focus}</h2>
+            <p>{count} exercises</p>
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
+</BaseLayout>

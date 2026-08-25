@@ -896,6 +896,117 @@ nav a:hover,
   margin-block-end: 0;
 }
 
+.day-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-block-end: 1.75rem;
+}
+
+.day-pill {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  padding-inline: 1.1rem;
+  background: var(--surface);
+  border-radius: 1rem;
+  corner-shape: squircle;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 650;
+  text-decoration: none;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+
+.day-pill:hover {
+  background: var(--surface-strong);
+  color: var(--ink);
+}
+
+.day-pill-active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.plan-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--card-gradient);
+  border-radius: 2rem;
+  corner-shape: squircle;
+  text-decoration: none;
+  transition: transform 150ms ease-out;
+}
+
+.plan-card:hover {
+  transform: translateY(-3px);
+}
+
+.plan-card:active {
+  transform: scale(0.96);
+}
+
+.plan-card-stage {
+  display: grid;
+  aspect-ratio: 1;
+  place-items: center;
+  margin: 0.65rem 0.65rem 0;
+  padding: 1.1rem;
+  overflow: hidden;
+  background: var(--stage);
+  border-radius: 1.35rem;
+  corner-shape: squircle;
+}
+
+.plan-card-stage img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.plan-card-copy {
+  padding: 1rem 1.1rem 1.25rem;
+}
+
+.plan-card-copy h2 {
+  margin-block: 0.35rem;
+  font-size: 1.15rem;
+}
+
+.plan-card-copy p:last-child {
+  margin-block-end: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.plan-muscle-group {
+  margin-block-end: 3rem;
+}
+
+.plan-muscle-group h2 {
+  margin-block-end: 1rem;
+  font-size: var(--text-heading);
+}
+
+.day-nav-links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-block-start: 1rem;
+  padding-block-start: 2rem;
+  border-block-start: 1px solid var(--surface-strong);
+  color: var(--muted);
+  font-weight: 650;
+}
+
 @media (max-width: 900px) {
   .hero,
   .detail-hero,
@@ -917,7 +1028,8 @@ nav a:hover,
   }
 
   .preview-grid,
-  .exercise-grid {
+  .exercise-grid,
+  .plan-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
@@ -952,8 +1064,13 @@ nav a:hover,
   .exercise-grid,
   .frame-grid,
   .metadata-grid,
-  .filter-panel {
+  .filter-panel,
+  .plan-grid {
     grid-template-columns: 1fr;
+  }
+
+  .day-nav-links {
+    flex-wrap: wrap;
   }
 
   .stats {
