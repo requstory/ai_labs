@@ -4,6 +4,7 @@ import CopyButton from '../components/CopyButton.astro';
 import ExerciseCard from '../components/ExerciseCard.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { frameUrl, withBase } from '../lib/paths';
+import { muscleColor } from '../lib/muscleColor';
 
 const featuredNames = ['Push-up', 'Squat', 'Deadlift', 'Pull-up', 'Plank'];
 const featured = featuredNames
@@ -43,7 +44,7 @@ const frame = getAssetUrl(pushUp.slug, 1);`;
       <div class="install-pill" data-squircle data-radius="18"><code>{installCommand}</code><CopyButton text={installCommand} /></div>
       <pre tabindex="0"><code>{quickStart}</code></pre>
       <div class="developer-previews" aria-label="Sample exercise assets">
-        {developerPreviews.map((exercise) => <a href={withBase(`exercises/${exercise.slug}/`)} aria-label={`View ${exercise.name}`}><img src={frameUrl(exercise.slug, 1)} data-frames={JSON.stringify(exercise.frames.map((frame) => frameUrl(exercise.slug, frame)))} alt="" width="512" height="512" loading="eager" /></a>)}
+        {developerPreviews.map((exercise) => <a href={withBase(`exercises/${exercise.slug}/`)} aria-label={`View ${exercise.name}`}><span class="frame-mask" aria-hidden="true" data-frames={JSON.stringify(exercise.frames.map((frame) => frameUrl(exercise.slug, frame)))} style={`--frame-tint:${muscleColor(exercise.primaryMuscle)}; -webkit-mask-image:url(${frameUrl(exercise.slug, 1)}); mask-image:url(${frameUrl(exercise.slug, 1)})`} /></a>)}
       </div>
     </div>
   </section>

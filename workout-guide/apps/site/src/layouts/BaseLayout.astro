@@ -69,10 +69,10 @@ const socialImage = new URL(image.replace(/^\//, ''), Astro.site);
       }
 
       const FRAME_INTERVAL_MS = 450;
-      const frameElements = Array.from(document.querySelectorAll<HTMLImageElement>('img[data-frames]'));
+      const frameElements = Array.from(document.querySelectorAll<HTMLElement>('[data-frames]'));
       const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (frameElements.length > 0 && !reduceMotion) {
-        const state = new Map<HTMLImageElement, { frames: string[]; index: number; direction: 1 | -1 }>();
+        const state = new Map<HTMLElement, { frames: string[]; index: number; direction: 1 | -1 }>();
         for (const element of frameElements) {
           try {
             const frames = JSON.parse(element.dataset.frames ?? '[]') as string[];
@@ -82,17 +82,26 @@ const socialImage = new URL(image.replace(/^\//, ''), Astro.site);
           }
         }
 
-        const active = new Set<HTMLImageElement>();
+        const active = new Set<HTMLElement>();
         const frameObserver = new IntersectionObserver(
           (entries) => {
             for (const entry of entries) {
-              if (entry.isIntersecting) active.add(entry.target as HTMLImageElement);
-              else active.delete(entry.target as HTMLImageElement);
+              if (entry.isIntersecting) active.add(entry.target as HTMLElement);
+              else active.delete(entry.target as HTMLElement);
             }
           },
           { threshold: 0.1 },
         );
         for (const element of state.keys()) frameObserver.observe(element);
+
+        const setFrame = (element: HTMLElement, url: string) => {
+          if (element instanceof HTMLImageElement) {
+            element.src = url;
+            return;
+          }
+          element.style.setProperty('mask-image', `url(${url})`);
+          element.style.setProperty('-webkit-mask-image', `url(${url})`);
+        };
 
         let lastTick = 0;
         const tick = (timestamp: number) => {
@@ -103,7 +112,7 @@ const socialImage = new URL(image.replace(/^\//, ''), Astro.site);
               if (!entry) continue;
               entry.index += entry.direction;
               if (entry.index === entry.frames.length - 1 || entry.index === 0) entry.direction *= -1;
-              element.src = entry.frames[entry.index];
+              setFrame(element, entry.frames[entry.index]);
             }
           }
           requestAnimationFrame(tick);

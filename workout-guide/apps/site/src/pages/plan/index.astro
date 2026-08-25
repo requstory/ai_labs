@@ -3,6 +3,7 @@ import { exercises } from '@bryllim/workout-guide';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { frameUrl, withBase } from '../../lib/paths';
 import { getPlanExercises, weeklyPlan } from '../../lib/weeklyPlan';
+import { planDayColor } from '../../lib/muscleColor';
 
 const days = weeklyPlan.map((planDay) => {
   const dayExercises = getPlanExercises(planDay, exercises);
@@ -29,13 +30,11 @@ const days = weeklyPlan.map((planDay) => {
         <a class="plan-card focus-shell" data-squircle data-radius="36" href={withBase(`plan/${planDay.slug}/`)}>
           <div class="plan-card-stage" data-squircle data-radius="26">
             {preview && (
-              <img
-                src={frameUrl(preview.slug, 1)}
+              <span
+                class="frame-mask"
+                aria-hidden="true"
                 data-frames={JSON.stringify(preview.frames.map((frame) => frameUrl(preview.slug, frame)))}
-                alt=""
-                width="512"
-                height="512"
-                loading="lazy"
+                style={`--frame-tint:${planDayColor(planDay.slug)}; -webkit-mask-image:url(${frameUrl(preview.slug, 1)}); mask-image:url(${frameUrl(preview.slug, 1)})`}
               />
             )}
           </div>

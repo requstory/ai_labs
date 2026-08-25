@@ -403,10 +403,9 @@ nav a:hover,
   corner-shape: squircle;
 }
 
-.developer-previews img {
+.developer-previews .frame-mask {
   width: 72%;
   height: 72%;
-  object-fit: contain;
 }
 
 .stagger-item {
@@ -594,10 +593,9 @@ nav a:hover,
   corner-shape: squircle;
 }
 
-.card-stage img {
+.card-stage .frame-mask {
   width: 100%;
   height: 100%;
-  object-fit: contain;
 }
 
 .card-image {
@@ -605,7 +603,6 @@ nav a:hover,
   min-height: 0;
   flex: 1;
   padding: 1rem 1rem 0;
-  object-fit: contain;
 }
 
 .card-copy {
@@ -747,10 +744,9 @@ nav a:hover,
   corner-shape: squircle;
 }
 
-.detail-featured img {
+.detail-featured .frame-mask {
   width: 100%;
   height: 100%;
-  object-fit: contain;
 }
 
 .frame-grid {
@@ -896,6 +892,17 @@ nav a:hover,
   margin-block-end: 0;
 }
 
+.frame-mask {
+  display: inline-block;
+  background-color: var(--frame-tint, var(--ink));
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
 .day-switcher {
   display: flex;
   flex-wrap: wrap;
@@ -965,10 +972,9 @@ nav a:hover,
   corner-shape: squircle;
 }
 
-.plan-card-stage img {
+.plan-card-stage .frame-mask {
   width: 100%;
   height: 100%;
-  object-fit: contain;
 }
 
 .plan-card-copy {

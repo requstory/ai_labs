@@ -1,6 +1,7 @@
 ---
 import type { Exercise } from '@bryllim/workout-guide';
 import { frameUrl, withBase } from '../lib/paths';
+import { muscleColor } from '../lib/muscleColor';
 
 type Props = {
   exercise: Exercise;
@@ -25,15 +26,12 @@ const searchText = [
 >
   <a class="card-link focus-shell" href={withBase(`exercises/${exercise.slug}/`)}>
     <div class="card-surface" data-squircle data-radius="28">
-      <img
-        class="card-image"
-        src={frameUrl(exercise.slug, 1)}
+      <span
+        class="card-image frame-mask"
+        role="img"
+        aria-label={`${exercise.name} exercise illustration`}
         data-frames={JSON.stringify(exercise.frames.map((frame) => frameUrl(exercise.slug, frame)))}
-        alt={`${exercise.name} exercise illustration`}
-        loading="lazy"
-        decoding="async"
-        width="512"
-        height="512"
+        style={`--frame-tint:${muscleColor(exercise.primaryMuscle)}; -webkit-mask-image:url(${frameUrl(exercise.slug, 1)}); mask-image:url(${frameUrl(exercise.slug, 1)})`}
       />
       <div class="card-copy">
         <h2>{exercise.name}</h2>
