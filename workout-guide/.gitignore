@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.astro/
+apps/site/public/frames/
+apps/site/public/og.png

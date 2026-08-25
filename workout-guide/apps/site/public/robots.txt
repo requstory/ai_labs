@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://requstory.github.io/ai_labs/sitemap-index.xml

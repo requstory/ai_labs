@@ -1,0 +1,77 @@
+---
+import { exercises } from '@bryllim/workout-guide';
+import CopyButton from '../components/CopyButton.astro';
+import ExerciseCard from '../components/ExerciseCard.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { frameUrl, withBase } from '../lib/paths';
+
+const featuredNames = ['Push-up', 'Squat', 'Deadlift', 'Pull-up', 'Plank'];
+const featured = featuredNames
+  .map((name) => exercises.find((exercise) => exercise.name.toLowerCase() === name.toLowerCase()))
+  .filter((exercise): exercise is (typeof exercises)[number] => Boolean(exercise));
+const previews = featured.length === 5 ? featured : exercises.slice(0, 5);
+const developerPreviews = previews.slice(0, 3);
+const installCommand = 'npm install @bryllim/workout-guide';
+const quickStart = `import { searchExercises, getAssetUrl } from '@bryllim/workout-guide';
+
+const [pushUp] = searchExercises('push up');
+const frame = getAssetUrl(pushUp.slug, 1);`;
+---
+
+<BaseLayout
+  title="Workout Guide — 302 open SVG exercise illustrations"
+  description="A framework-neutral npm package with 906 polished SVG exercise frames, searchable metadata, and simple integration guides. Created by Bryl Lim."
+>
+  <section class="hero page-shell" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <p class="eyebrow stagger-item">npm package · v1.0.0</p>
+      <h1 class="stagger-item" id="hero-title">Exercise assets, ready to ship.</h1>
+      <p class="stagger-item">A typed, framework-neutral API for 302 exercises and 906 transparent SVG frames. Built for web, React Native, and anything JavaScript.</p>
+      <a class="hero-creator focus-shell stagger-item" href="https://bryllim.com" rel="author">
+        <span class="creator-copy">Created by <strong>Bryl Lim</strong></span>
+        <span class="creator-arrow" aria-hidden="true">↗</span>
+      </a>
+      <div class="stagger-item">
+        <div class="hero-actions">
+          <a class="action-link focus-shell" href={withBase('guide/')}><span class="button-surface button-surface-dark" data-squircle data-radius="18">Read the docs</span></a>
+          <a class="action-link focus-shell" href={withBase('exercises/')}><span class="button-surface button-surface-light" data-squircle data-radius="18">Explore assets</span></a>
+        </div>
+      </div>
+    </div>
+    <div class="developer-panel" data-squircle data-radius="32">
+      <div class="developer-panel-label"><span>Quick start</span><span>TypeScript</span></div>
+      <div class="install-pill" data-squircle data-radius="18"><code>{installCommand}</code><CopyButton text={installCommand} /></div>
+      <pre tabindex="0"><code>{quickStart}</code></pre>
+      <div class="developer-previews" aria-label="Sample exercise assets">
+        {developerPreviews.map((exercise) => <a href={withBase(`exercises/${exercise.slug}/`)} aria-label={`View ${exercise.name}`}><img src={frameUrl(exercise.slug, 1)} alt="" width="512" height="512" loading="eager" /></a>)}
+      </div>
+    </div>
+  </section>
+
+  <section class="stats page-shell" aria-label="Library statistics">
+    <div class="stat-card" data-squircle data-radius="32"><strong class="stat-value">302</strong><span class="stat-label">Exercises</span></div>
+    <div class="stat-card" data-squircle data-radius="32"><strong class="stat-value">906</strong><span class="stat-label">Transparent SVGs</span></div>
+    <div class="stat-card" data-squircle data-radius="32"><strong class="stat-value">512</strong><span class="stat-label">Square viewBox</span></div>
+  </section>
+
+  <section class="section page-shell" aria-labelledby="featured-title">
+    <div class="section-heading"><div><p class="eyebrow">Featured assets</p><h2 id="featured-title">Consistent by default.</h2></div><a href={withBase('exercises/')}>View all 302</a></div>
+    <div class="preview-grid">{previews.map((exercise) => <ExerciseCard exercise={exercise} />)}</div>
+  </section>
+
+  <section class="section page-shell" aria-labelledby="benefits-title">
+    <div class="section-heading"><div><p class="eyebrow">Package primitives</p><h2 id="benefits-title">Use only what you need.</h2></div><p>Framework-neutral metadata and files, with no runtime UI opinions.</p></div>
+    <div class="feature-grid">
+      <article class="feature-card" data-squircle data-radius="32"><span class="feature-number">01</span><h3>Predictable assets</h3><p>Every exercise has exactly three ordered, transparent 512 × 512 SVG frames.</p></article>
+      <article class="feature-card" data-squircle data-radius="32"><span class="feature-number">02</span><h3>Useful metadata</h3><p>Search and filter by name, equipment, muscles, exercise type, and stretch status.</p></article>
+      <article class="feature-card" data-squircle data-radius="32"><span class="feature-number">03</span><h3>Works everywhere</h3><p>Import files directly, resolve CDN URLs, or bundle literal requires in Expo and React Native.</p></article>
+    </div>
+  </section>
+
+  <section class="section page-shell" aria-labelledby="cta-title">
+    <div class="cta-surface" data-squircle data-radius="52">
+      <div><p class="eyebrow">MIT code · CC BY-SA 4.0 assets</p><h2 id="cta-title">Open by design.</h2><p>Explore the source, ship the frames, and help the library get better.</p></div>
+      <div class="section-actions"><a class="action-link focus-shell" href="https://github.com/bryllim/workout-guide"><span class="button-surface button-surface-light" data-squircle data-radius="18">View on GitHub</span></a><a class="action-link focus-shell" href="https://www.npmjs.com/package/@bryllim/workout-guide"><span class="button-surface button-surface-light" data-squircle data-radius="18">Open npm</span></a></div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,20 @@
+---
+type Props = {
+  text: string;
+  label?: string;
+  class?: string;
+};
+
+const { text, label = 'Copy', class: className = '' } = Astro.props;
+---
+
+<button
+  class:list={['copy-control focus-shell', className]}
+  type="button"
+  data-copy-text={text}
+  data-default-label={label}
+>
+  <span class="button-surface button-surface-light" data-squircle data-radius="18">
+    <span data-copy-label>{label}</span>
+  </span>
+</button>

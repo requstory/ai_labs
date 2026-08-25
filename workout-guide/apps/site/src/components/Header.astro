@@ -1,0 +1,14 @@
+---
+import { withBase } from '../lib/paths';
+---
+
+<header class="site-header">
+  <div class="nav-shell page-shell">
+    <a class="brand" href={withBase()} aria-label="Workout Guide home">Workout Guide</a>
+    <nav aria-label="Primary navigation">
+      <a href={withBase('exercises/')}>Exercises</a>
+      <a href={withBase('guide/')}>Guide</a>
+      <a href="https://github.com/bryllim/workout-guide">GitHub</a>
+    </nav>
+  </div>
+</header>

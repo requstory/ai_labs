@@ -1,0 +1,55 @@
+---
+import { exercises, getAssetUrl, type Exercise } from '@bryllim/workout-guide';
+import CopyButton from '../../components/CopyButton.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { frameUrl, withBase } from '../../lib/paths';
+
+export function getStaticPaths() {
+  return exercises.map((exercise) => ({ params: { slug: exercise.slug }, props: { exercise } }));
+}
+
+type Props = { exercise: Exercise };
+const { exercise } = Astro.props;
+const staticImport = `import frame1 from '@bryllim/workout-guide/assets/${exercise.slug}/frame-1.svg';`;
+const cdnUrl = getAssetUrl(exercise.slug, 1) ?? '';
+const typeLabel = exercise.exerciseType.split('_').map((word) => word[0].toUpperCase() + word.slice(1)).join(' ');
+---
+
+<BaseLayout title={`${exercise.name} frames — Workout Guide`} description={`Download three transparent ${exercise.name} exercise frames and view metadata and integration examples.`} image={frameUrl(exercise.slug, 1)}>
+  <article class="page-shell">
+    <header class="detail-hero">
+      <div class="detail-copy">
+        <a class="breadcrumb" href={withBase('exercises/')}>← All exercises</a>
+        <p class="eyebrow">{typeLabel}</p><h1>{exercise.name}</h1><p>Three transparent, production-ready frames in one consistent visual system.</p>
+        <ul class="tag-list" aria-label="Exercise summary"><li class="tag" data-squircle data-radius="14">{exercise.equipment}</li><li class="tag" data-squircle data-radius="14">{exercise.primaryMuscle}</li>{exercise.isStretch && <li class="tag" data-squircle data-radius="14">Stretch</li>}</ul>
+      </div>
+      <div class="detail-featured" data-squircle data-radius="64"><img src={frameUrl(exercise.slug, 2)} alt={`${exercise.name}, middle position`} width="512" height="512" /></div>
+    </header>
+
+    <section class="section" aria-labelledby="frames-title">
+      <div class="section-heading"><div><p class="eyebrow">Transparent SVG · 512 × 512</p><h2 id="frames-title">All three frames.</h2></div><p>Use them as a sequence or select the pose that fits your interface.</p></div>
+      <div class="frame-grid">
+        {exercise.frames.map((frame) => <div class="frame-card" data-squircle data-radius="32"><div class="card-stage" data-squircle data-radius="22"><img src={frameUrl(exercise.slug, frame)} alt={`${exercise.name}, frame ${frame.index}`} width="512" height="512" loading="lazy" /></div><div class="frame-meta"><p>Frame {frame.index}</p><a href={frameUrl(exercise.slug, frame)} download={`${exercise.slug}-frame-${frame.index}.svg`}>Download</a></div></div>)}
+      </div>
+    </section>
+
+    <section class="section guide-layout" aria-labelledby="details-title">
+      <div><p class="eyebrow">Catalog record</p><h2 id="details-title">Exercise details.</h2></div>
+      <dl class="metadata-grid"><div class="metadata-card" data-squircle data-radius="32"><dt>Equipment</dt><dd>{exercise.equipment}</dd></div><div class="metadata-card" data-squircle data-radius="32"><dt>Primary muscle</dt><dd>{exercise.primaryMuscle}</dd></div><div class="metadata-card" data-squircle data-radius="32"><dt>Secondary muscles</dt><dd>{exercise.secondaryMuscles.join(', ') || 'None listed'}</dd></div><div class="metadata-card" data-squircle data-radius="32"><dt>Exercise type</dt><dd>{typeLabel}</dd></div></dl>
+    </section>
+
+    <section class="section guide-layout" aria-labelledby="use-title">
+      <div><p class="eyebrow">Copy and ship</p><h2 id="use-title">Use this exercise.</h2></div>
+      <div class="guide-content">
+        <h3>Static import</h3><div class="code-with-copy"><CopyButton text={staticImport} /><div class="code-block" data-squircle data-radius="24"><pre tabindex="0"><code>{staticImport}</code></pre></div></div>
+        <h3>CDN URL</h3><div class="code-with-copy"><CopyButton text={cdnUrl} /><div class="code-block" data-squircle data-radius="24"><pre tabindex="0"><code>{cdnUrl}</code></pre></div></div>
+        <p>Asset path: <code>{exercise.frames[0].path}</code></p><p><a href={withBase('guide/')}>Read the complete integration guide →</a></p>
+      </div>
+    </section>
+
+    <section class="section guide-layout" aria-labelledby="credit-title">
+      <div><p class="eyebrow">License</p><h2 id="credit-title">Attribution.</h2></div>
+      <div class="guide-card" data-squircle data-radius="32"><p>Illustration by <a href={exercise.attribution.creatorUrl}>{exercise.attribution.creator}</a>, licensed under <a href={exercise.attribution.licenseUrl}>{exercise.attribution.license}</a>.</p>{exercise.attribution.source && <p>Frame 1 is derived from <a href={exercise.attribution.source.url}>{exercise.attribution.source.name}</a>. {exercise.attribution.source.changes}</p>}</div>
+    </section>
+  </article>
+</BaseLayout>

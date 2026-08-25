@@ -1,0 +1,43 @@
+---
+import type { Exercise } from '@bryllim/workout-guide';
+import { frameUrl, withBase } from '../lib/paths';
+
+type Props = {
+  exercise: Exercise;
+};
+
+const { exercise } = Astro.props;
+const searchText = [
+  exercise.name,
+  exercise.equipment,
+  exercise.primaryMuscle,
+  ...exercise.secondaryMuscles,
+].join(' ').toLowerCase();
+---
+
+<article
+  class="exercise-card"
+  data-exercise-card
+  data-search={searchText}
+  data-equipment={exercise.equipment}
+  data-muscle={exercise.primaryMuscle}
+  data-type={exercise.exerciseType}
+>
+  <a class="card-link focus-shell" href={withBase(`exercises/${exercise.slug}/`)}>
+    <div class="card-surface" data-squircle data-radius="28">
+      <img
+        class="card-image"
+        src={frameUrl(exercise.slug, 1)}
+        alt={`${exercise.name} exercise illustration`}
+        loading="lazy"
+        decoding="async"
+        width="512"
+        height="512"
+      />
+      <div class="card-copy">
+        <h2>{exercise.name}</h2>
+        <p>{exercise.primaryMuscle} · {exercise.equipment}</p>
+      </div>
+    </div>
+  </a>
+</article>

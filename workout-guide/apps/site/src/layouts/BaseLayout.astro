@@ -1,0 +1,86 @@
+---
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { withBase } from '../lib/paths';
+import '../styles/global.css';
+
+type Props = {
+  title: string;
+  description: string;
+  image?: string;
+};
+
+const { title, description, image = withBase('og.svg') } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const socialImage = new URL(image.replace(/^\//, ''), Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="author" content="Bryl Lim" />
+    <meta name="theme-color" content="#101010" />
+    <meta name="description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={socialImage} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href={withBase('favicon.svg')} type="image/svg+xml" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <Header />
+    <main id="main-content">
+      <slot />
+    </main>
+    <Footer />
+    <div class="sr-only" id="copy-status" role="status" aria-live="polite"></div>
+    <script>
+      import { getSvgPath } from 'figma-squircle';
+
+      const applySquircle = (element: HTMLElement) => {
+        const { width, height } = element.getBoundingClientRect();
+        if (width === 0 || height === 0) return;
+        const radius = Number(element.dataset.radius ?? 24);
+        const path = getSvgPath({
+          width,
+          height,
+          cornerRadius: Math.min(radius, width / 2, height / 2),
+          cornerSmoothing: 0.8,
+          preserveSmoothing: true,
+        });
+        element.style.clipPath = `path("${path}")`;
+      };
+
+      const squircleElements = Array.from(document.querySelectorAll<HTMLElement>('[data-squircle]'));
+      const observer = new ResizeObserver((entries) => {
+        for (const entry of entries) applySquircle(entry.target as HTMLElement);
+      });
+      for (const element of squircleElements) {
+        applySquircle(element);
+        observer.observe(element);
+      }
+
+      const copyStatus = document.querySelector<HTMLElement>('#copy-status');
+      for (const button of document.querySelectorAll<HTMLButtonElement>('[data-copy-text]')) {
+        button.addEventListener('click', async () => {
+          const text = button.dataset.copyText ?? '';
+          await navigator.clipboard.writeText(text);
+          const label = button.querySelector<HTMLElement>('[data-copy-label]');
+          if (label) label.textContent = 'Copied';
+          if (copyStatus) copyStatus.textContent = 'Copied code to clipboard.';
+          window.setTimeout(() => {
+            if (label) label.textContent = button.dataset.defaultLabel ?? 'Copy';
+          }, 1600);
+        });
+      }
+    </script>
+  </body>
+</html>
