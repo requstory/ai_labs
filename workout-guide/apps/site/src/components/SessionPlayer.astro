@@ -17,7 +17,7 @@ const payload = groups.map(([muscle, list]) => ({
     isStretch: exercise.isStretch,
     location: exerciseLocation(exercise),
     tint: muscleColor(exercise.primaryMuscle),
-    frameUrl: frameUrl(exercise.slug, 1),
+    frameUrls: exercise.frames.map((frame) => frameUrl(exercise.slug, frame)),
   })),
 }));
 ---
@@ -79,7 +79,7 @@ const payload = groups.map(([muscle, list]) => ({
     isStretch: boolean;
     location: 'home' | 'gym';
     tint: string;
-    frameUrl: string;
+    frameUrls: string[];
   };
   type MuscleGroup = { muscle: string; exercises: SessionExercise[] };
   type SessionStep = { exercise: SessionExercise; label: string; workSeconds: number; restSeconds: number };
@@ -227,19 +227,39 @@ const payload = groups.map(([muscle, list]) => ({
         return `${m}:${String(s).padStart(2, '0')}`;
       };
 
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let animationFrames: string[] = [];
+      let animationIndex = 0;
+      let animationDirection: 1 | -1 = 1;
+
+      function setStageFrame(url: string) {
+        if (!stage) return;
+        stage.style.setProperty('mask-image', `url(${url})`);
+        stage.style.setProperty('-webkit-mask-image', `url(${url})`);
+      }
+
       function renderStep() {
         const step = steps[stepIndex];
         if (!step) return;
         if (nameEl) nameEl.textContent = step.exercise.name;
         if (muscleEl) muscleEl.textContent = step.exercise.primaryMuscle;
         if (targetEl) targetEl.textContent = phase === 'work' ? step.label : 'Rest';
-        if (stage) {
-          stage.style.setProperty('--frame-tint', step.exercise.tint);
-          stage.style.setProperty('mask-image', `url(${step.exercise.frameUrl})`);
-          stage.style.setProperty('-webkit-mask-image', `url(${step.exercise.frameUrl})`);
-        }
+        if (stage) stage.style.setProperty('--frame-tint', step.exercise.tint);
+        animationFrames = step.exercise.frameUrls;
+        animationIndex = 0;
+        animationDirection = 1;
+        setStageFrame(animationFrames[0]);
         if (progressEl) progressEl.textContent = `Step ${stepIndex + 1} of ${steps.length}`;
         if (progressFillEl) progressFillEl.style.width = `${(stepIndex / steps.length) * 100}%`;
+      }
+
+      if (!reduceMotion) {
+        window.setInterval(() => {
+          if (sessionOverlay.hidden || paused || animationFrames.length < 2) return;
+          animationIndex += animationDirection;
+          if (animationIndex === animationFrames.length - 1 || animationIndex === 0) animationDirection *= -1;
+          setStageFrame(animationFrames[animationIndex]);
+        }, 450);
       }
 
       function startPhaseTimer(seconds: number) {
