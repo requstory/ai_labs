@@ -32,6 +32,19 @@ const today = (): string => {
 };
 
 let data: CoachData = load();
+
+/* ---------- Theme ---------- */
+const prefersLight = matchMedia('(prefers-color-scheme: light)');
+function applyTheme() {
+  const t = data.settings.theme;
+  const dark = t === 'dark' || (t === 'system' && !prefersLight.matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#101010' : '#f2f2ee');
+  // iOS only reads this at launch; it's kept in step so the next launch matches.
+  document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')?.setAttribute('content', dark ? 'black-translucent' : 'default');
+}
+prefersLight.addEventListener('change', () => { if (data.settings.theme === 'system') applyTheme(); });
+applyTheme();
 const persist = () => {
   if (!save(data)) toast('Couldn’t save on this phone. Back up your data from More.');
 };
@@ -261,7 +274,7 @@ function screenToday() {
   const tomorrow = PLAN[d.index + 1];
   if (tomorrow) {
     const ti = TYPE_INFO[tomorrow.type];
-    parts.push(`<p class="section-label">Tomorrow</p><a class="item" style="border-radius:18px;border:1px dashed #3a3a36;background:none" href="#day/${tomorrow.id}">
+    parts.push(`<p class="section-label">Tomorrow</p><a class="item" style="border-radius:18px;border:1px dashed var(--border);background:none" href="#day/${tomorrow.id}">
       <span class="thumb">${anim(ti.icon, ti.tint)}</span>
       <span class="grow"><span class="t">${formatDate(ds[tomorrow.index])} · ${ti.label}</span><span class="d">${esc(headline(tomorrow))}${tomorrow.minutes ? `, ~${tomorrow.minutes} min` : ''}. ${tomorrow.type === 'rest' ? 'Recover.' : 'Lay out your kit tonight.'}</span></span>
       <span class="chev">›</span></a>`);
@@ -352,22 +365,22 @@ function lineChart(points: { x: number; y: number }[], targetFn: (w: number) => 
   const x = (w: number) => pl + (w / TOTAL_WEEKS) * (W - pl - pr);
   const y = (v: number) => pt + (1 - (v - lo) / (hi - lo)) * (H - pt - pb);
   const ticks = [lo, Math.round((lo + hi) / 2), hi];
-  const grid = ticks.map((v) => `<line x1="${pl}" x2="${W - pr}" y1="${y(v)}" y2="${y(v)}" stroke="#2a2a28"/><text x="${pl - 6}" y="${y(v) + 4}" text-anchor="end" fill="#8a8a84" font-size="10">${v}</text>`).join('');
-  const xt = [0, 8, 16, 24].map((w) => `<text x="${x(w)}" y="${H - 8}" text-anchor="middle" fill="#8a8a84" font-size="10">${w === 0 ? 'Start' : `Wk ${w}`}</text>`).join('');
-  const tgt = `<path d="M${x(0)},${y(targetFn(0))} L${x(TOTAL_WEEKS)},${y(targetFn(TOTAL_WEEKS))}" stroke="#8a8a84" stroke-width="1.5" stroke-dasharray="4 4" fill="none"/>`;
+  const grid = ticks.map((v) => `<line x1="${pl}" x2="${W - pr}" y1="${y(v)}" y2="${y(v)}" style="stroke:var(--line)"/><text x="${pl - 6}" y="${y(v) + 4}" text-anchor="end" style="fill:var(--chart-text)" font-size="10">${v}</text>`).join('');
+  const xt = [0, 8, 16, 24].map((w) => `<text x="${x(w)}" y="${H - 8}" text-anchor="middle" style="fill:var(--chart-text)" font-size="10">${w === 0 ? 'Start' : `Wk ${w}`}</text>`).join('');
+  const tgt = `<path d="M${x(0)},${y(targetFn(0))} L${x(TOTAL_WEEKS)},${y(targetFn(TOTAL_WEEKS))}" style="stroke:var(--chart-text)" stroke-width="1.5" stroke-dasharray="4 4" fill="none"/>`;
   let series = '';
   let trend = '';
   if (points.length) {
     const path = points.map((p, i) => `${i ? 'L' : 'M'}${x(p.x)},${y(p.y)}`).join(' ');
     const last = points[points.length - 1];
-    series = `<path d="${path}" stroke="var(--run)" stroke-width="2.5" fill="none" stroke-linejoin="round"/>` +
-      points.map((p) => `<circle cx="${x(p.x)}" cy="${y(p.y)}" r="${p === last ? 4.5 : 2.5}" fill="var(--run)"/>`).join('');
+    series = `<path d="${path}" style="stroke:var(--run)" stroke-width="2.5" fill="none" stroke-linejoin="round"/>` +
+      points.map((p) => `<circle cx="${x(p.x)}" cy="${y(p.y)}" r="${p === last ? 4.5 : 2.5}" style="fill:var(--run)"/>`).join('');
     if (points.length >= 3) {
       const avg = points.map((_, i) => {
         const win = points.slice(Math.max(0, i - 2), i + 1);
         return { x: points[i].x, y: win.reduce((a, p) => a + p.y, 0) / win.length };
       }).slice(2);
-      trend = `<path d="${avg.map((p, i) => `${i ? 'L' : 'M'}${x(p.x)},${y(p.y)}`).join(' ')}" stroke="var(--warn)" stroke-width="2" fill="none" opacity=".85"/>`;
+      trend = `<path d="${avg.map((p, i) => `${i ? 'L' : 'M'}${x(p.x)},${y(p.y)}`).join(' ')}" style="stroke:var(--warn)" stroke-width="2" fill="none" opacity=".85"/>`;
     }
   }
   const lastP = points[points.length - 1];
@@ -425,7 +438,7 @@ function screenProgress() {
     <div class="card stack">
       <div class="row between"><span class="big">${lastW ? `${fmtNum(lastW.y)} kg` : `${fmtNum(sw)} kg`}</span><span class="sub">${lastW && lastW.x > 0 ? `${lastW.y <= sw ? '−' : '+'}${Math.abs(sw - lastW.y).toFixed(1)} kg since start` : 'starting weight'}</span></div>
       ${lineChart(weightPts, (w) => sw - 0.7 * w, 'Weight', 'kg')}
-      <div class="legend"><span><i style="background:var(--run)"></i>You</span><span><i style="background:var(--warn)"></i>3-week average</span><span><i style="background:#8a8a84"></i>Target, −0.7 kg a week</span></div>
+      <div class="legend"><span><i style="background:var(--run)"></i>You</span><span><i style="background:var(--warn)"></i>3-week average</span><span><i style="background:var(--chart-text)"></i>Target, −0.7 kg a week</span></div>
     </div>
     <p class="section-label">VO₂ max</p>
     <div class="card stack">
@@ -473,6 +486,12 @@ function screenMore() {
              <div class="grid2"><button class="btn ghost" data-action="pause-cancel">Cancel</button><button class="btn" data-action="pause-confirm">Pause plan</button></div>`
           : `<p class="note">Pausing moves the rest of your plan back, instead of marking days as missed. Don't pause for one missed day; just carry on.</p><button class="btn ghost" data-action="pause">Pause the plan</button>`}
       ${data.pauses.filter((p) => p.end).length ? `<p class="note">Past pauses: ${data.pauses.filter((p) => p.end).map((p) => `${formatDate(p.start)}–${formatDate(p.end!)}`).join(', ')}</p>` : ''}
+    </div>
+
+    <p class="section-label">Appearance</p>
+    <div class="card stack">
+      <div class="seg" role="group" aria-label="Appearance">${(['system', 'light', 'dark'] as const).map((t) => `<button aria-pressed="${r.theme === t}" data-theme-set="${t}">${t === 'system' ? 'System' : cap(t)}</button>`).join('')}</div>
+      <p class="note">System follows your iPhone's Light or Dark setting, including automatic switching at sunset.</p>
     </div>
 
     <p class="section-label">Sound and music</p>
@@ -747,7 +766,7 @@ const mmss = (ms: number) => {
 };
 const RING_C = 2 * Math.PI * 96;
 function ring(frac: number, tint: string) {
-  return `<svg viewBox="0 0 220 220" aria-hidden="true"><circle cx="110" cy="110" r="96" stroke="#272727" stroke-width="12" fill="none"/><circle data-ring cx="110" cy="110" r="96" stroke="${tint}" stroke-width="12" fill="none" stroke-linecap="round" stroke-dasharray="${RING_C}" stroke-dashoffset="${RING_C * (1 - frac)}"/></svg>`;
+  return `<svg viewBox="0 0 220 220" aria-hidden="true"><circle cx="110" cy="110" r="96" style="stroke:var(--strong)" stroke-width="12" fill="none"/><circle data-ring cx="110" cy="110" r="96" style="stroke:${tint}" stroke-width="12" fill="none" stroke-linecap="round" stroke-dasharray="${RING_C}" stroke-dashoffset="${RING_C * (1 - frac)}"/></svg>`;
 }
 function updateTimerDom(leftMs: number) {
   if (!sess) return;
@@ -961,6 +980,11 @@ root.addEventListener('click', async (e) => {
     renderSession();
     return;
   }
+  if (ds.themeSet) {
+    data.settings.theme = ds.themeSet as CoachData['settings']['theme'];
+    persist(); applyTheme(); render();
+    return;
+  }
   if (ds.feel && sess) { sess.feel = ds.feel as Session['feel']; renderSession(); return; }
   if (ds.sess && sess) {
     const step = sess.steps[sess.i];
@@ -1074,7 +1098,7 @@ root.addEventListener('change', async (e) => {
     try {
       const restored = normalise(JSON.parse(await t.files[0].text()));
       data = restored;
-      persist(); render();
+      persist(); applyTheme(); render();
       toast('Restored from backup');
     } catch (err) {
       toast(err instanceof Error && err.message.includes('Coach') ? err.message : 'That file couldn’t be read. Choose a coach-backup .json file.');

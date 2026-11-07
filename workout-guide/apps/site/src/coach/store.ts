@@ -11,12 +11,13 @@ export type CoachData = {
   weighIns: Record<string, WeighIn>; // by plan week number ("0" = start)
   kg: Record<string, number>; // last weight used per exercise slug
   pauses: Pause[];
-  settings: ReminderSettings & { voice: boolean; trackWaist: boolean };
+  settings: ReminderSettings & { voice: boolean; trackWaist: boolean; theme: Theme };
   calendarAddedAt?: string;
   lastBackup?: string;
 };
 
-const KEY = 'coach:v1';
+export type Theme = 'system' | 'light' | 'dark';
+export const KEY = 'coach:v1';
 
 export const emptyData = (): CoachData => ({
   version: 1,
@@ -26,7 +27,7 @@ export const emptyData = (): CoachData => ({
   weighIns: {},
   kg: {},
   pauses: [],
-  settings: { evening: true, eveningAt: '20:00', morning: true, morningAt: '07:00', voice: true, trackWaist: false },
+  settings: { evening: true, eveningAt: '20:00', morning: true, morningAt: '07:00', voice: true, trackWaist: false, theme: 'system' },
 });
 
 /** Accepts stored or restored JSON and fills in anything missing, so older backups keep working. */

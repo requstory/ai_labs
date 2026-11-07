@@ -27,13 +27,14 @@ export type RunSpec =
   | { kind: 'jogwalk'; total: number; jog: number; walk: number }
   | { kind: 'steady'; total: number };
 
+/** Tints are CSS variables so they adapt to light and dark (see coach.css). */
 export const TYPE_INFO: Record<DayType, { label: string; tint: string; icon: string }> = {
-  easy: { label: 'Easy run/walk', tint: '#4ecdc4', icon: 'running' },
-  A: { label: 'Strength A', tint: '#ff6b5b', icon: 'goblet-squat' },
-  B: { label: 'Strength B', tint: '#a78bfa', icon: 'dumbbell-romanian-deadlift' },
-  long: { label: 'Long session', tint: '#fbbf24', icon: 'walking' },
-  int: { label: 'Intervals', tint: '#f472b6', icon: 'running' },
-  rest: { label: 'Rest day', tint: '#8a8a84', icon: 'childs-pose' },
+  easy: { label: 'Easy run/walk', tint: 'var(--t-easy)', icon: 'running' },
+  A: { label: 'Strength A', tint: 'var(--t-a)', icon: 'goblet-squat' },
+  B: { label: 'Strength B', tint: 'var(--t-b)', icon: 'dumbbell-romanian-deadlift' },
+  long: { label: 'Long session', tint: 'var(--t-long)', icon: 'walking' },
+  int: { label: 'Intervals', tint: 'var(--t-int)', icon: 'running' },
+  rest: { label: 'Rest day', tint: 'var(--t-rest)', icon: 'childs-pose' },
 };
 
 export const EXERCISE_NAMES: Record<string, string> = {
