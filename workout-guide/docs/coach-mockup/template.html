@@ -183,6 +183,14 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .rest-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--app-surface); border-radius: 16px; padding: 10px 14px; }
 .zone { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 14px; background: var(--app-surface); font-size: 14px; }
 .zone b { font: 800 18px var(--font); font-variant-numeric: tabular-nums; }
+.music { display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; background: var(--app-surface); border-radius: 16px; padding: 8px 10px; }
+.music .art { width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #1db954, #0b5d2a); }
+.music .ctl { display: flex; gap: 2px; }
+.music .ctl button { width: 40px; height: 40px; border: 0; border-radius: 50%; background: none; font-size: 16px; }
+.music .t { font: 600 14px var(--font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.music .s { font-size: 12px; color: var(--app-muted); }
+.awake { display: inline-flex; align-items: center; gap: 5px; font: 600 12px var(--font); color: var(--good); }
+.awake i { width: 7px; height: 7px; border-radius: 50%; background: var(--good); }
 .toast { position: absolute; left: 18px; right: 18px; bottom: 96px; z-index: 9; background: var(--app-ink); color: #101010; border-radius: 14px; padding: 12px 14px; font: 600 14px var(--font); opacity: 0; transform: translateY(8px); transition: .25s; pointer-events: none; }
 .toast.show { opacity: 1; transform: none; }
 .notif-preview { display: grid; grid-template-columns: 38px 1fr; gap: 10px; background: rgb(60 60 58 / .7); border-radius: 18px; padding: 10px 12px; align-items: center; }
@@ -212,7 +220,7 @@ tr:last-child td { border-bottom: 0; }
 <div class="page">
   <header class="intro">
     <div class="intro-copy">
-      <p class="eyebrow">Mockup for approval · nothing is built yet</p>
+      <p class="eyebrow">Mockup v2 for approval · nothing is built yet</p>
       <h1>FitSplit Coach</h1>
       <p class="lede">Your 24-week checklist, from Mon 9 Nov 2026 to Sun 25 Apr 2027, as a Home Screen app for your iPhone. It shows today's session with FitSplit's animated exercises, times your runs and sets, logs your Monday weigh-ins and VO₂ max, and reminds you the night before.</p>
       <div class="how">
@@ -222,6 +230,7 @@ tr:last-child td { border-bottom: 0; }
           <li><b>Plan</b> covers all 24 weeks and 168 days, generated from your checklist. Tap any day.</li>
           <li><b>Progress</b> has the Monday weigh-in, plus charts of your numbers against target.</li>
           <li><b>More</b> holds reminders, your starting numbers, backup and reference routines.</li>
+          <li>New in v2: the <b>screen-on</b> badge and <b>music bar</b> in sessions, and <b>Import from Health</b> on Progress.</li>
         </ol>
       </div>
       <p class="notice">The sample weigh-ins on the Progress tab are made up to show what the charts look like. Nothing you tap here is saved.</p>
@@ -267,7 +276,7 @@ tr:last-child td { border-bottom: 0; }
       <h3>Your plan as data</h3>
       <ul>
         <li>The checklist becomes a small typed module covering the 24 weeks, 3 phases and 2 day patterns. From week 9, Wednesday is the rest day and Strength B moves to Sunday. Tests check that all 168 generated days match the text of your checklist word for word.</li>
-        <li>Every exercise is linked to a FitSplit animation. Goblet squat → <code>goblet-squat</code>, push-up on a bench → <code>incline-push-up</code>, shoulder press → <code>standing-dumbbell-press</code>, Romanian deadlift → <code>dumbbell-romanian-deadlift</code>, the shoulder-tap plank → <code>plank-shoulder-tap</code>, and so on. The warm-up and stretch routines are animated too. Two are stand-ins: <code>good-morning</code> for the hip hinge, and <code>high-knees</code> for jogging, because FitSplit's own running and walking drawings show a treadmill. I can draw outdoor jog and walk figures in the same style if you'd like.</li>
+        <li>Every exercise is linked to a FitSplit animation. Goblet squat → <code>goblet-squat</code>, push-up on a bench → <code>incline-push-up</code>, shoulder press → <code>standing-dumbbell-press</code>, Romanian deadlift → <code>dumbbell-romanian-deadlift</code>, the shoulder-tap plank → <code>plank-shoulder-tap</code>, and so on. The warm-up and stretch routines are animated too. Two are stand-ins: <code>good-morning</code> for the hip hinge, and FitSplit's treadmill drawings for jogging and walking.</li>
         <li>Missed days are shown as missed and are never moved, so you carry on from the next day without doubling up, as your checklist says.</li>
       </ul>
     </section>
@@ -292,7 +301,7 @@ tr:last-child td { border-bottom: 0; }
           <tr><td>B. Push notifications</td><td>You allow notifications in the app (iOS 16.4 or later, Home Screen apps only). A free scheduled Cloudflare Worker sends you tomorrow's session at your chosen time.</td><td>True app notifications that open the right day, and they can skip a reminder once the day is marked done. They need a free Cloudflare account and a one-time setup of push keys. Your device's push address is stored on that worker, but none of your health data is.</td></tr>
         </tbody>
       </table></div>
-      <p>The More tab in the mockup shows both. I'd build A first, then add B if you want proper app notifications.</p>
+      <p class="rec">Decided: A (calendar alerts). B can be added later without changing anything else.</p>
     </section>
 
     <section>
@@ -303,6 +312,64 @@ tr:last-child td { border-bottom: 0; }
         <li>The app works with VoiceOver: labelled controls, announced timer phases, and visible focus. Animations stop when Reduce Motion is on.</li>
         <li>The app checks for updates in the background and shows an "Update ready" banner. This fixes the stale-cache issue FitSplit had before.</li>
       </ul>
+    </section>
+
+    <section>
+      <h3>What Coach can use on your iPhone</h3>
+      <p>A web app on the Home Screen can use some of the phone's features, but not all. Here is what applies to this plan:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Feature</th><th>Can Coach use it?</th><th>What it's for</th></tr></thead>
+        <tbody>
+          <tr><td>Keep the screen on</td><td class="rec">Yes</td><td>Sessions keep the screen awake (see below).</td></tr>
+          <tr><td>Spoken cues and sounds</td><td class="rec">Yes</td><td>“Set 2 of 3”, “Walk now”, “Rest over”.</td></tr>
+          <tr><td>Camera and photos</td><td class="rec">Yes</td><td>Optional monthly progress photos, kept on the phone.</td></tr>
+          <tr><td>Files</td><td class="rec">Yes</td><td>Back up and restore, and the calendar file.</td></tr>
+          <tr><td>Badge on the app icon</td><td class="rec">Yes</td><td>Shows a “1” until today's session is done.</td></tr>
+          <tr><td>Clipboard, when you tap Paste</td><td class="rec">Yes</td><td>Imports Health numbers that a Shortcut has copied (below).</td></tr>
+          <tr><td>Location (GPS)</td><td>Only while Coach is open on screen</td><td>Could measure run distance, but tracking stops when the phone locks. Your watch's Outdoor Run is more accurate, so I'd skip this.</td></tr>
+          <tr><td>Apple Health</td><td>No, but there's a workaround</td><td>An Apple Shortcut can read your latest weight, VO₂ max and workouts from Health and copy them. In Coach you tap <b>Import from Health</b>. That's two taps instead of typing.</td></tr>
+          <tr><td>Apple Watch, Bluetooth heart-rate straps</td><td>No</td><td>Keep recording on the watch. Coach shows your heart-rate targets.</td></tr>
+          <tr><td>Vibration</td><td>No</td><td>iPhone doesn't allow it for web apps, so Coach uses sounds and voice instead.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section>
+      <h3>Keeping the screen on</h3>
+      <ul>
+        <li>When a session starts, Coach asks iOS to keep the screen awake, using the Screen Wake Lock feature. This works for Home Screen web apps on current iOS. A green <b>Screen on</b> badge shows it's active.</li>
+        <li>iOS drops the lock when you leave the app or lock the phone. Coach asks for it again as soon as you come back, and the timers keep correct time in between.</li>
+        <li>The screen goes back to normal when the session ends or you close it, so your battery isn't drained the rest of the day.</li>
+        <li>If an iOS version ever refuses the wake lock, Coach falls back to a silent looping video, which also keeps the screen on.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>Music: Spotify and YouTube Music</h3>
+      <ul>
+        <li><b>Spotify: yes, with Premium.</b> You sign in once. Coach then shows play, pause, next and previous in the session, and can start a chosen playlist when a session starts, e.g. one for strength and one for runs. The music still plays in the Spotify app, and Coach sends it commands. A free account doesn't allow this.</li>
+        <li><b>YouTube Music: no direct control.</b> Google offers no way for other apps to control it. Coach can show an <b>Open YouTube Music</b> button, and you use the Lock Screen or Control Center music controls as usual.</li>
+        <li><b>Voice cues over your music.</b> Coach will play its cues over your music, briefly lowering it, instead of stopping it. iOS decides how web-app sound mixes with other apps, so I'll test this on a real iPhone before relying on it.</li>
+        <li>FitSplit's built-in tracks stay as an option if you don't want to use another app.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>More features you could add</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Feature</th><th>What it does</th><th>Suggestion</th></tr></thead>
+        <tbody>
+          <tr><td>Weight history per exercise</td><td>Logs the kg for each exercise. When you mark a session “Easy” and you hit every rep, Coach suggests going up 1–2 kg next time, as your weight rules say.</td><td class="rec">Recommended</td></tr>
+          <tr><td>Health import via Shortcut</td><td>Fills in your Monday weight and VO₂ max from Apple Health.</td><td class="rec">Recommended</td></tr>
+          <tr><td>Spotify controls</td><td>Music controls and a playlist for each session type.</td><td class="rec">Recommended if you have Premium</td></tr>
+          <tr><td>Waist measurement</td><td>A monthly waist measurement next to your weight. It often keeps moving when the scale stalls.</td><td class="rec">Recommended</td></tr>
+          <tr><td>Weekly summary</td><td>A Sunday-evening card covering sessions done, weight trend and next week's changes, e.g. “intervals start this week”.</td><td>Nice to have</td></tr>
+          <tr><td>Progress photos</td><td>A monthly front and side photo, with a side-by-side compare. Photos stay on the phone.</td><td>Nice to have</td></tr>
+          <tr><td>Pause for illness or holiday</td><td>Pauses the plan and moves the remaining days back, instead of marking them missed.</td><td>Nice to have</td></tr>
+          <tr><td>Daily protein and water ticks</td><td>Two quick taps a day, for the “plan your meals around protein” habit.</td><td>Optional</td></tr>
+          <tr><td>Rest-day mobility</td><td>An optional 10-minute stretch routine for Thursdays or Wednesdays, using the same animations.</td><td>Optional</td></tr>
+        </tbody>
+      </table></div>
     </section>
 
     <section>
@@ -319,12 +386,17 @@ tr:last-child td { border-bottom: 0; }
     </section>
 
     <section>
-      <h3>Decisions I need from you</h3>
+      <h3>Decided</h3>
       <div class="decisions">
-        <div class="decision"><b>1. Reminders.</b> Start with calendar alerts (A), go straight to push notifications (B), or both? And what times: 20:00 the night before, 07:00 on the day?</div>
-        <div class="decision"><b>2. Name and icon.</b> “Coach” on the Home Screen, under the FitSplit brand, or another name?</div>
-        <div class="decision"><b>3. Location.</b> Inside the FitSplit site at <code>/ai_labs/coach/</code> (recommended, since it shares the animations and deployment), or as its own separate site?</div>
-        <div class="decision"><b>4. Anything to change in the mockup:</b> screens, wording, what's on Today?</div>
+        <div class="decision"><b>Reminders:</b> calendar alerts (A), 20:00 the night before and 07:00 on the day, changeable in More.</div>
+        <div class="decision"><b>Name:</b> “Coach” on the Home Screen.</div>
+        <div class="decision"><b>Location:</b> inside the FitSplit site at <code>/ai_labs/coach/</code>.</div>
+        <div class="decision"><b>Art:</b> FitSplit's existing treadmill drawings for jogging and walking.</div>
+      </div>
+      <h3>Still to decide</h3>
+      <div class="decisions">
+        <div class="decision"><b>1. Extra features:</b> which ones from the table above should go into the first version?</div>
+        <div class="decision"><b>2. Spotify:</b> do you have Premium? If not, I'll leave out the Spotify controls and keep the Open-app buttons.</div>
       </div>
     </section>
   </article>
@@ -338,7 +410,7 @@ const EX = {
   'plank-shoulder-tap': 'Plank with shoulder taps', 'dumbbell-romanian-deadlift': 'Romanian deadlift',
   'one-arm-dumbbell-row': 'One-arm dumbbell row', 'glute-bridge': 'Glute bridge', 'single-leg-glute-bridge': 'Single-leg glute bridge',
   'step-up': 'Step-up', 'side-plank': 'Side plank', 'calf-raise': 'Calf raise', 'single-leg-calf-raise': 'Single-leg calf raise',
-  'walking': 'Brisk walk', 'high-knees': 'Marching on the spot', 'arm-circles': 'Arm circles',
+  'walking': 'Brisk walk', 'running': 'Jog', 'high-knees': 'Marching on the spot', 'arm-circles': 'Arm circles',
   'bodyweight-squat': 'Bodyweight squat', 'good-morning': 'Hip hinge', 'leg-swings-stretch': 'Leg swings', 'forward-lunge': 'Bodyweight lunge',
   'wall-calf-stretch': 'Calf stretch against a wall', 'standing-quad-stretch': 'Standing quad stretch', 'hamstring-stretch': 'Hamstring stretch, heel on a low step',
   'kneeling-hip-flexor-stretch': 'Kneeling hip-flexor stretch', 'doorway-chest-stretch': 'Chest stretch in a doorway', 'childs-pose': "Child's pose",
@@ -386,11 +458,11 @@ const WEEKS = [
 const START = new Date(2026, 10, 9);
 const START_WEIGHT = 113, START_VO2 = 26; // entered by you on first launch in the real app
 const TYPES = {
-  easy: { label: 'Easy run/walk', tint: 'var(--t-run)', icon: 'high-knees' },
+  easy: { label: 'Easy run/walk', tint: 'var(--t-run)', icon: 'running' },
   A: { label: 'Strength A', tint: 'var(--t-a)', icon: 'goblet-squat' },
   B: { label: 'Strength B', tint: 'var(--t-b)', icon: 'dumbbell-romanian-deadlift' },
   long: { label: 'Long session', tint: 'var(--t-long)', icon: 'walking' },
-  int: { label: 'Intervals', tint: 'var(--t-int)', icon: 'high-knees' },
+  int: { label: 'Intervals', tint: 'var(--t-int)', icon: 'running' },
   rest: { label: 'Rest day', tint: 'var(--t-rest)', icon: 'walking' },
 };
 const DOW = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -523,7 +595,7 @@ function screenToday() {
     </button>
     <p class="section-label">Reminder preview</p>
     <div class="notif-preview" aria-label="Example 20:00 reminder">
-      <span class="app-ic"><span style="position:relative;width:30px;height:30px">${anim('high-knees','var(--t-run)')}</span></span>
+      <span class="app-ic"><span style="position:relative;width:30px;height:30px">${anim('running','var(--t-run)')}</span></span>
       <div><div class="t">Tomorrow: Easy run/walk <span>20:00</span></div><p>30 min of 1 min jog / 2 min walk at 145–155 bpm. Lay out your kit tonight.</p></div>
     </div>`;
 }
@@ -614,6 +686,8 @@ function screenProgress() {
         <div class="field"><label for="wi-vo2">VO₂ max</label><input class="input" id="wi-vo2" inputmode="decimal" placeholder="26.5"></div>
       </div>
       <button class="btn" data-toast="Saved. Week 1: 112.3 kg target · VO₂ max 26.5 target">Save weigh-in</button>
+      <button class="btn ghost" data-toast="Filled in from Health: 112.4 kg, VO₂ max 26.4 (copied by your Coach Shortcut)">Import from Health</button>
+      <p class="note">Run the “Coach: Health” Shortcut first. It copies your latest weight, VO₂ max and workouts so Coach can fill this in.</p>
     </div>
     <div class="row" style="justify-content:space-between;margin-top:22px"><p class="section-label" style="margin:0">Weight</p><span class="sample-flag">SAMPLE DATA</span></div>
     <div class="card" style="margin-top:8px;display:grid;gap:8px">
@@ -651,6 +725,13 @@ function screenMore() {
       ${r.method === 'calendar'
         ? `<button class="btn" data-toast="iOS would now ask: Add all 168 events to Calendar?">Add plan to Calendar</button><p class="note">Adds 168 events, 9 Nov 2026 to 25 Apr 2027. Each one holds the full instructions and a link that opens that day in Coach.</p>`
         : `<button class="btn" data-toast="iOS would now ask: “Coach” Would Like to Send You Notifications">Turn on notifications</button><p class="note">Needs iOS 16.4 or later, with Coach opened from the Home Screen. Reminders skip days you've already marked done.</p>`}
+    </div>
+    <p class="section-label">Music</p>
+    <div class="list">
+      <button class="item" data-toast="iOS would now open Spotify to sign in (Premium needed for controls)"><span class="grow"><span class="t">Connect Spotify</span><span class="d">Play, pause and skip from your session, and start a playlist per session type</span></span><span class="chev">›</span></button>
+      <div class="item"><span class="grow"><span class="t">Strength playlist</span></span><span class="sub">Workout Mix</span></div>
+      <div class="item"><span class="grow"><span class="t">Run playlist</span></span><span class="sub">Easy Run 150 bpm</span></div>
+      <div class="item"><span class="grow"><span class="t">Voice cues over music</span><span class="d">Music gets quieter while a cue plays, then comes back up</span></span><input type="checkbox" class="toggle" checked aria-label="Voice cues over music"></div>
     </div>
     <p class="section-label">Your starting numbers</p>
     <div class="list">
@@ -708,13 +789,13 @@ function ring(frac, tint) {
 function runPhases(step) {
   if (step.kind === 'jogwalk') {
     const out = []; let t = 0;
-    while (t < step.total * 60) { out.push(['Jog', step.jog * 60, 'var(--t-run)', 'high-knees']); t += step.jog * 60; if (t >= step.total * 60) break; out.push(['Walk', step.walk * 60, 'var(--app-ink)', 'walking']); t += step.walk * 60; }
+    while (t < step.total * 60) { out.push(['Jog', step.jog * 60, 'var(--t-run)', 'running']); t += step.jog * 60; if (t >= step.total * 60) break; out.push(['Walk', step.walk * 60, 'var(--app-ink)', 'walking']); t += step.walk * 60; }
     return out;
   }
   if (step.kind === 'int') {
-    const out = []; for (let k = 0; k < step.n; k++) { out.push([`Hard ${k + 1} of ${step.n}`, step.hard * 60, 'var(--t-int)', 'high-knees']); out.push(['Easy', step.easy * 60, 'var(--app-ink)', 'walking']); } return out;
+    const out = []; for (let k = 0; k < step.n; k++) { out.push([`Hard ${k + 1} of ${step.n}`, step.hard * 60, 'var(--t-int)', 'running']); out.push(['Easy', step.easy * 60, 'var(--app-ink)', 'walking']); } return out;
   }
-  return [['Easy jog', step.total * 60, 'var(--t-run)', 'high-knees']];
+  return [['Easy jog', step.total * 60, 'var(--t-run)', 'running']];
 }
 function renderSession() {
   const d = sess.day, t = TYPES[d.type], step = sess.steps[sess.i];
@@ -771,13 +852,21 @@ function renderSession() {
   }
   el.style.setProperty('--tint', t.tint);
   el.innerHTML = `
-    <div class="session-top"><button class="icon-btn" id="sess-close" data-sess-close aria-label="End session">✕</button><span class="sub">${t.label} · Week ${d.week}</span><span class="icon-btn" aria-hidden="true" style="visibility:hidden"></span></div>
+    <div class="session-top"><button class="icon-btn" id="sess-close" data-sess-close aria-label="End session">✕</button><span class="sub">${t.label} · Week ${d.week}</span><span class="awake" title="The screen won't dim or lock during this session"><i></i>Screen on</span></div>
     <div class="progress" style="--tint:${t.tint}"><i style="width:${pct}%"></i></div>
     <div class="session-body">${body}</div>
+    <div style="padding:0 18px">${musicBar()}</div>
     <div class="session-foot">${foot}</div>
     <div id="confirm" hidden style="position:absolute;inset:0;background:rgb(0 0 0 / .6);display:grid;place-items:end center;padding:18px 18px 30px">
       <div class="card" style="width:100%;display:grid;gap:10px;background:#222"><h3>End this session?</h3><p class="note">Your sets so far are kept. The day stays not done until you finish.</p><button class="btn" data-end-yes style="background:var(--t-a)">End session</button><button class="btn ghost" data-end-no>Keep going</button></div>
     </div>`;
+}
+function musicBar() {
+  return `<div class="music" aria-label="Music controls">
+    <span class="art" aria-hidden="true"></span>
+    <span style="min-width:0"><span class="t" style="display:block">Workout Mix</span><span class="s">Spotify · iPhone</span></span>
+    <span class="ctl"><button aria-label="Previous track" data-toast="Spotify: previous track">⏮</button><button aria-label="Pause music" data-toast="Spotify: paused">⏸</button><button aria-label="Next track" data-toast="Spotify: next track">⏭</button></span>
+  </div>`;
 }
 function tickSession() {
   const step = sess.steps[sess.i];
