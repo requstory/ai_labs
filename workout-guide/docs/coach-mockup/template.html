@@ -1,0 +1,937 @@
+<meta charset="utf-8">
+<title>FitSplit Coach</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: an iPhone-sized working prototype of the app on top, the build plan below it as a readable brief. */
+:root {
+  --bg: #f3f3ef;
+  --fg: #161615;
+  --muted: #62625d;
+  --line: #d9d9d2;
+  --panel: #ffffff;
+  --accent: #0f766e;
+  --warn-bg: #fff4d6;
+  --warn-fg: #6b4b00;
+  /* App chrome stays dark in both themes: it mirrors FitSplit's own palette. */
+  --app-ink: #f4f4ef;
+  --app-muted: #a3a29c;
+  --app-paper: #101010;
+  --app-surface: #1a1a1a;
+  --app-strong: #272727;
+  --app-stage: #080808;
+  --t-run: #4ecdc4;
+  --t-a: #ff6b5b;
+  --t-b: #a78bfa;
+  --t-long: #fbbf24;
+  --t-int: #f472b6;
+  --t-rest: #8a8a84;
+  --good: #6ee7b7;
+  --font: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-text: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b0b0b; --fg: #ecece6; --muted: #a3a29c; --line: #2b2b29; --panel: #151515; --accent: #5eead4;
+    --warn-bg: #3a2e0a; --warn-fg: #fde68a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b0b0b; --fg: #ecece6; --muted: #a3a29c; --line: #2b2b29; --panel: #151515; --accent: #5eead4;
+  --warn-bg: #3a2e0a; --warn-fg: #fde68a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-text); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 64px;
+}
+.page { max-width: 1080px; margin: 0 auto; display: grid; gap: 40px; }
+.intro { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 40px; align-items: start; }
+@media (max-width: 860px) { .intro { grid-template-columns: minmax(0, 1fr); } }
+.intro-copy { display: grid; gap: 16px; max-width: 60ch; }
+.eyebrow { font: 600 12px/1.2 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+h1 { font: 700 clamp(30px, 5vw, 44px)/1.05 var(--font); letter-spacing: -.035em; margin: 0; text-wrap: balance; }
+h2 { font: 700 24px/1.15 var(--font); letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+h3 { font: 650 17px/1.25 var(--font); margin: 0; }
+p { margin: 0; }
+.lede { font-size: 17px; color: var(--muted); }
+.how { display: grid; gap: 8px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+.how ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.notice { background: var(--warn-bg); color: var(--warn-fg); border-radius: 12px; padding: 12px 14px; font-size: 14px; }
+
+/* ---------- Phone ---------- */
+.phone-wrap { display: grid; justify-items: center; gap: 10px; }
+.phone {
+  width: 390px; max-width: 100%; height: 800px; border-radius: 48px; padding: 10px; background: #000;
+  box-shadow: 0 0 0 1px #3a3a3a, 0 30px 80px rgb(0 0 0 / .35);
+}
+.screen {
+  position: relative; height: 100%; border-radius: 39px; overflow: hidden; background: var(--app-paper); color: var(--app-ink);
+  font-family: var(--font); display: flex; flex-direction: column; color-scheme: dark;
+}
+@media (max-width: 440px) {
+  .phone { width: 100%; height: min(780px, calc(100svh - 40px)); min-height: 620px; padding: 0; border-radius: 28px; background: none; box-shadow: 0 0 0 1px var(--line); }
+  .screen { border-radius: 28px; }
+}
+.statusbar { flex: none; height: 46px; display: flex; align-items: center; justify-content: space-between; padding: 6px 30px 0; font: 600 15px var(--font); }
+.statusbar .island { width: 110px; height: 30px; border-radius: 20px; background: #000; }
+.phone-caption { font-size: 13px; color: var(--muted); text-align: center; max-width: 360px; }
+.view { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 4px 18px 24px; scrollbar-width: none; }
+.view::-webkit-scrollbar { display: none; }
+.navbar { display: flex; align-items: center; gap: 8px; padding: 2px 0 10px; min-height: 44px; }
+.navbar .back { display: inline-flex; align-items: center; gap: 2px; color: var(--t-run); background: none; border: 0; font: 500 17px var(--font); padding: 8px 6px 8px 0; min-height: 44px; }
+.large-title { font: 800 32px/1.05 var(--font); letter-spacing: -.035em; margin: 2px 0 14px; }
+.sub { color: var(--app-muted); font-size: 14px; }
+.section-label { font: 600 12px var(--font); letter-spacing: .07em; text-transform: uppercase; color: var(--app-muted); margin: 22px 0 8px; }
+
+.tabbar {
+  flex: none; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid #222; background: rgb(16 16 16 / .94);
+  padding: 6px 6px 22px;
+}
+.tab { display: grid; justify-items: center; gap: 2px; background: none; border: 0; color: #77766f; font: 600 10.5px var(--font); padding: 4px 0; min-height: 48px; }
+.tab svg { width: 26px; height: 26px; }
+.tab[aria-current="page"] { color: var(--app-ink); }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--t-run); outline-offset: 2px; }
+
+/* Cards */
+.card { background: var(--app-surface); border-radius: 22px; padding: 16px; }
+.hero { position: relative; overflow: hidden; display: grid; gap: 12px; padding: 18px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 99px; font: 600 12px var(--font); background: var(--app-strong); color: var(--app-ink); }
+.chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--tint, var(--app-muted)); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.hero h2 { font: 800 28px/1.05 var(--font); letter-spacing: -.03em; color: var(--app-ink); }
+.stage { position: relative; aspect-ratio: 1.35; border-radius: 18px; background: var(--app-stage); max-width: 100%; }
+.stage.sq { aspect-ratio: 1; }
+.fm { position: absolute; inset: 6%; }
+.fm .f { position: absolute; inset: 0; -webkit-mask-image: var(--m); mask-image: var(--m); background: var(--tint, var(--app-ink)); -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center; opacity: 0; }
+.fm .f.on { opacity: 1; }
+.btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 52px; border-radius: 16px; border: 0; font: 700 17px var(--font); background: var(--app-ink); color: #101010; }
+.btn.ghost { background: var(--app-strong); color: var(--app-ink); }
+.btn.small { min-height: 44px; font-size: 15px; width: auto; padding: 0 18px; }
+.row { display: flex; align-items: center; gap: 12px; }
+.list { display: grid; gap: 2px; border-radius: 18px; overflow: hidden; }
+.item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--app-surface); border: 0; width: 100%; text-align: left; min-height: 56px; }
+.item .thumb { position: relative; flex: none; width: 46px; height: 46px; border-radius: 12px; background: var(--app-stage); }
+.item .thumb .fm { inset: 3px; }
+.item .grow { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.item .t { font: 600 16px var(--font); }
+.item .d { font-size: 13px; color: var(--app-muted); }
+.item .chev { color: #55554f; font-size: 20px; }
+.check { flex: none; width: 28px; height: 28px; border-radius: 50%; border: 2px solid #4a4a45; display: grid; place-items: center; background: none; padding: 0; }
+.check.done { background: var(--good); border-color: var(--good); color: #0b3b2c; }
+.check.missed { border-style: dashed; }
+.check svg { width: 16px; height: 16px; }
+.dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--tint); }
+.kv { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.kv .card { padding: 12px; display: grid; gap: 2px; }
+.kv b { font: 800 22px var(--font); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.kv span { font-size: 12px; color: var(--app-muted); }
+.pill-target { color: var(--app-muted); font-size: 12px; }
+.tomorrow { display: grid; gap: 6px; border: 1px dashed #3a3a36; background: none; }
+.note { font-size: 13px; color: var(--app-muted); }
+.week-strip { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 10px; scrollbar-width: none; margin: 0 -18px; padding-inline: 18px; scroll-snap-type: x proximity; }
+.week-strip::-webkit-scrollbar { display: none; }
+.wk { flex: none; scroll-snap-align: center; display: grid; justify-items: center; gap: 2px; width: 52px; padding: 8px 0; border-radius: 14px; border: 0; background: var(--app-surface); color: var(--app-muted); font: 600 11px var(--font); }
+.wk b { font: 800 18px var(--font); color: var(--app-ink); }
+.wk.rec { box-shadow: inset 0 -3px 0 var(--t-long); }
+.wk[aria-pressed="true"] { background: var(--app-ink); color: #101010; }
+.wk[aria-pressed="true"] b { color: #101010; }
+.week-head { display: grid; gap: 4px; margin-bottom: 12px; }
+.today-tag { font: 700 11px var(--font); color: #101010; background: var(--t-run); border-radius: 6px; padding: 1px 6px; margin-left: 6px; vertical-align: 2px; }
+.block { display: grid; gap: 4px; padding: 12px 14px; background: var(--app-surface); border-radius: 16px; }
+.block h4 { margin: 0; font: 700 13px var(--font); text-transform: uppercase; letter-spacing: .06em; color: var(--app-muted); }
+.steps { display: grid; gap: 8px; }
+.safety { font-size: 12.5px; color: var(--app-muted); border-left: 3px solid var(--t-a); padding: 6px 10px; }
+
+/* Forms */
+.field { display: grid; gap: 6px; }
+.field label { font: 600 13px var(--font); color: var(--app-muted); }
+.input { width: 100%; min-height: 48px; border-radius: 14px; border: 1px solid #333; background: var(--app-stage); color: var(--app-ink); font: 600 18px var(--font); padding: 0 14px; }
+.toggle { appearance: none; flex: none; width: 51px; height: 31px; border-radius: 99px; background: #3a3a36; position: relative; transition: background .2s; margin: 0; }
+.toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.toggle:checked { background: var(--good); }
+.toggle:checked::after { transform: translateX(20px); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--app-stage); border-radius: 12px; padding: 3px; gap: 3px; }
+.seg button { border: 0; background: none; border-radius: 9px; min-height: 36px; font: 600 14px var(--font); color: var(--app-muted); }
+.seg button[aria-pressed="true"] { background: var(--app-strong); color: var(--app-ink); }
+
+/* Charts */
+.chart { width: 100%; height: auto; display: block; }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--app-muted); }
+.legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
+.sample-flag { font: 700 11px var(--font); color: #101010; background: var(--t-long); border-radius: 6px; padding: 2px 7px; }
+
+/* Session */
+.session { position: absolute; inset: 0; z-index: 5; background: var(--app-paper); display: flex; flex-direction: column; transform: translateY(100%); transition: transform .32s cubic-bezier(.2,.8,.2,1); }
+.session.open { transform: none; }
+.session-top { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 50px 14px 6px; }
+.icon-btn { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--app-strong); display: grid; place-items: center; font-size: 17px; }
+.progress { height: 4px; background: var(--app-strong); border-radius: 4px; margin: 4px 18px 0; overflow: hidden; }
+.progress > i { display: block; height: 100%; background: var(--tint, var(--app-ink)); transition: width .3s; }
+.session-body { flex: 1; overflow-y: auto; padding: 14px 18px 18px; display: grid; gap: 14px; align-content: start; scrollbar-width: none; }
+.session-foot { flex: none; display: grid; grid-template-columns: auto 1fr; gap: 10px; padding: 10px 18px 30px; }
+.big-timer { font: 800 64px/1 var(--font); letter-spacing: -.04em; font-variant-numeric: tabular-nums; text-align: center; }
+.phase-name { font: 800 26px var(--font); text-align: center; letter-spacing: -.02em; color: var(--tint); }
+.ring { position: relative; width: 220px; height: 220px; margin: 0 auto; max-width: 100%; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring .inner { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: 4px; }
+.sets { display: flex; gap: 8px; justify-content: center; }
+.set { width: 52px; height: 52px; border-radius: 16px; border: 2px solid #3a3a36; background: none; font: 800 18px var(--font); }
+.set.done { background: var(--tint); border-color: var(--tint); color: #101010; }
+.rest-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--app-surface); border-radius: 16px; padding: 10px 14px; }
+.zone { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 14px; background: var(--app-surface); font-size: 14px; }
+.zone b { font: 800 18px var(--font); font-variant-numeric: tabular-nums; }
+.music { display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; background: var(--app-surface); border-radius: 16px; padding: 8px 10px; }
+.music .art { width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #1db954, #0b5d2a); }
+.music .ctl { display: flex; gap: 2px; }
+.music .ctl button { width: 40px; height: 40px; border: 0; border-radius: 50%; background: none; font-size: 16px; }
+.music .t { font: 600 14px var(--font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.music .s { font-size: 12px; color: var(--app-muted); }
+.awake { display: inline-flex; align-items: center; gap: 5px; font: 600 12px var(--font); color: var(--good); }
+.awake i { width: 7px; height: 7px; border-radius: 50%; background: var(--good); }
+.toast { position: absolute; left: 18px; right: 18px; bottom: 96px; z-index: 9; background: var(--app-ink); color: #101010; border-radius: 14px; padding: 12px 14px; font: 600 14px var(--font); opacity: 0; transform: translateY(8px); transition: .25s; pointer-events: none; }
+.toast.show { opacity: 1; transform: none; }
+.notif-preview { display: grid; grid-template-columns: 38px 1fr; gap: 10px; background: rgb(60 60 58 / .7); border-radius: 18px; padding: 10px 12px; align-items: center; }
+.notif-preview .app-ic { width: 38px; height: 38px; border-radius: 9px; background: #101010; display: grid; place-items: center; box-shadow: inset 0 0 0 1px #333; }
+.notif-preview .t { font: 700 14px var(--font); display: flex; justify-content: space-between; gap: 8px; }
+.notif-preview .t span { font-weight: 500; color: var(--app-muted); font-size: 12px; }
+.notif-preview p { font-size: 13.5px; line-height: 1.3; }
+
+/* ---------- Build plan ---------- */
+.plan { display: grid; gap: 32px; max-width: 760px; }
+.plan section { display: grid; gap: 12px; }
+.plan ul, .plan ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.plan li::marker { color: var(--muted); }
+.plan code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 0 4px; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 600 12px var(--font); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+.rec { color: var(--accent); font-weight: 600; }
+.decisions { display: grid; gap: 10px; counter-reset: q; }
+.decision { padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); display: grid; gap: 4px; }
+@media (prefers-reduced-motion: reduce) { .session, .toast, .toggle, .toggle::after { transition: none; } }
+</style>
+<style id="frames-css">/*FRAMES_CSS*/</style>
+
+<div class="page">
+  <header class="intro">
+    <div class="intro-copy">
+      <p class="eyebrow">Mockup v2 for approval · nothing is built yet</p>
+      <h1>FitSplit Coach</h1>
+      <p class="lede">Your 24-week checklist, from Mon 9 Nov 2026 to Sun 25 Apr 2027, as a Home Screen app for your iPhone. It shows today's session with FitSplit's animated exercises, times your runs and sets, logs your Monday weigh-ins and VO₂ max, and reminds you the night before.</p>
+      <div class="how">
+        <h3>Try it</h3>
+        <ol>
+          <li><b>Today</b> shows Tue 10 Nov (Strength A) as the example date. Tap <b>Start session</b>.</li>
+          <li><b>Plan</b> covers all 24 weeks and 168 days, generated from your checklist. Tap any day.</li>
+          <li><b>Progress</b> has the Monday weigh-in, plus charts of your numbers against target.</li>
+          <li><b>More</b> holds reminders, your starting numbers, backup and reference routines.</li>
+          <li>New in v2: the <b>screen-on</b> badge and <b>music bar</b> in sessions, and <b>Import from Health</b> on Progress.</li>
+        </ol>
+      </div>
+      <p class="notice">The sample weigh-ins on the Progress tab are made up to show what the charts look like. Nothing you tap here is saved.</p>
+    </div>
+    <div class="phone-wrap">
+      <div class="phone" id="phone">
+        <div class="screen" id="screen">
+          <div class="statusbar" aria-hidden="true"><span>19:42</span><span class="island"></span><span>5G ▮</span></div>
+          <main class="view" id="view" tabindex="-1"></main>
+          <nav class="tabbar" id="tabbar" aria-label="Sections"></nav>
+          <section class="session" id="session" aria-modal="true" role="dialog" aria-label="Workout session" hidden></section>
+          <div class="toast" id="toast" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+      <p class="phone-caption">An interactive prototype. On your iPhone the app runs full screen, without browser bars.</p>
+    </div>
+  </header>
+
+  <article class="plan" aria-labelledby="plan-title">
+    <section>
+      <p class="eyebrow">Build plan</p>
+      <h2 id="plan-title">How the app will be built</h2>
+      <p>The app goes into the same Astro site as FitSplit, at <code>requstory.github.io/ai_labs/coach/</code>, with its own app manifest. In Safari you tap Share, then Add to Home Screen, and it opens full screen as a separate app called “Coach”. It reuses FitSplit's 302 exercise frames, its tinted animation loop and its session timer and music. It works offline after the first visit.</p>
+    </section>
+
+    <section>
+      <h3>Screens and navigation</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Screen</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td>Today (tab)</td><td>Today's row from your checklist, an animated preview, <b>Start session</b>, this week's progress, and tomorrow's session with a "lay out your kit" prompt. On Mondays a weigh-in card appears at the top.</td></tr>
+          <tr><td>Plan (tab)</td><td>A strip of the 24 weeks, with recovery weeks marked. Each day shows its type colour and status: done, missed or upcoming. Tapping a day pushes a Day screen with a back button.</td></tr>
+          <tr><td>Day (pushed)</td><td>Warm-up, main session and cool-down written out, with every exercise animated. You can start the session or mark the day done from here.</td></tr>
+          <tr><td>Session (full-screen sheet)</td><td><b>Strength:</b> warm-up, then each exercise with a set tracker, a 60–90 s rest timer and a kg field that shows last time's weight, then the stretch routine. <b>Runs and intervals:</b> a jog/walk or hard/easy timer with spoken cues, your heart-rate zone, and a reminder to record it as Outdoor Run. It ends with a short log (duration, average heart rate, how it felt). Swipe down or tap ✕ to close; a confirmation stops you losing a session by accident.</td></tr>
+          <tr><td>Progress (tab)</td><td>The Monday weigh-in and VO₂ max form, weight and VO₂ max charts against your targets with a 3-week trend line, and how many sessions you've completed.</td></tr>
+          <tr><td>More (tab)</td><td>Reminders, your starting numbers, the reference routines (warm-up, stretch, heart rate, choosing weights, kit, missed days), backup and restore, and the safety guidance.</td></tr>
+        </tbody>
+      </table></div>
+      <p>Each day has its own link (for example <code>/coach/day/2026-11-10/</code>), so a reminder opens straight to that day. The phone's back gesture returns to the previous screen. The tab bar stays fixed, and sessions open as sheets above it.</p>
+    </section>
+
+    <section>
+      <h3>Your plan as data</h3>
+      <ul>
+        <li>The checklist becomes a small typed module covering the 24 weeks, 3 phases and 2 day patterns. From week 9, Wednesday is the rest day and Strength B moves to Sunday. Tests check that all 168 generated days match the text of your checklist word for word.</li>
+        <li>Every exercise is linked to a FitSplit animation. Goblet squat → <code>goblet-squat</code>, push-up on a bench → <code>incline-push-up</code>, shoulder press → <code>standing-dumbbell-press</code>, Romanian deadlift → <code>dumbbell-romanian-deadlift</code>, the shoulder-tap plank → <code>plank-shoulder-tap</code>, and so on. The warm-up and stretch routines are animated too. Two are stand-ins: <code>good-morning</code> for the hip hinge, and FitSplit's treadmill drawings for jogging and walking.</li>
+        <li>Missed days are shown as missed and are never moved, so you carry on from the next day without doubling up, as your checklist says.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>Your data and privacy</h3>
+      <ul>
+        <li>Everything you log stays on your iPhone, in the app's own storage, and the app asks iOS to keep that storage. Apps added to the Home Screen are not subject to Safari's 7-day clean-up.</li>
+        <li>The repository is public, so your weight targets will not be written into the code. On first launch you enter your start weight (113 kg), start VO₂ max (26) and start date. The weekly targets (−0.7 kg and +0.5 VO₂ max per week) are worked out on the phone.</li>
+        <li><b>Back up</b> saves a file to the Files app, and <b>Restore</b> loads it back, so you can move to a new phone or recover if you ever delete the app.</li>
+        <li>A web app can't read Apple Health. You type in the VO₂ max and weight from the Health app, which takes about 10 seconds on a Monday. Run time and average heart rate are optional fields after each session.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>Daily notifications</h3>
+      <p>On iPhone, a web app can only show notifications that a server pushes to it. There's no server in this setup yet, so there are two ways to do reminders:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Option</th><th>How it works</th><th>Trade-offs</th></tr></thead>
+        <tbody>
+          <tr><td><span class="rec">A. Calendar alerts (recommended to start)</span></td><td>The app creates a calendar file with all 168 sessions. Each event holds the full instructions, a link to that day in the app, and alerts at the times you choose, e.g. 20:00 the night before and 07:00 on the day. You add it to the iPhone Calendar with one tap.</td><td>No server and no cost, and it works offline. The alerts come from Calendar, not from the app, and they don't know whether you've already done the session. If you change the reminder times, you add a new calendar file.</td></tr>
+          <tr><td>B. Push notifications</td><td>You allow notifications in the app (iOS 16.4 or later, Home Screen apps only). A free scheduled Cloudflare Worker sends you tomorrow's session at your chosen time.</td><td>True app notifications that open the right day, and they can skip a reminder once the day is marked done. They need a free Cloudflare account and a one-time setup of push keys. Your device's push address is stored on that worker, but none of your health data is.</td></tr>
+        </tbody>
+      </table></div>
+      <p class="rec">Decided: A (calendar alerts). B can be added later without changing anything else.</p>
+    </section>
+
+    <section>
+      <h3>iPhone details</h3>
+      <ul>
+        <li>Full screen with no browser bars. Layout respects the notch, Dynamic Island and home indicator. Tap targets are at least 44 pt, the system font is used, and the app is dark to match FitSplit.</li>
+        <li>The screen stays awake during sessions where iOS allows it. Spoken cues use the same audio as FitSplit (iPhone has no web vibration). Timers keep correct time when you lock the phone and come back.</li>
+        <li>The app works with VoiceOver: labelled controls, announced timer phases, and visible focus. Animations stop when Reduce Motion is on.</li>
+        <li>The app checks for updates in the background and shows an "Update ready" banner. This fixes the stale-cache issue FitSplit had before.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>What Coach can use on your iPhone</h3>
+      <p>A web app on the Home Screen can use some of the phone's features, but not all. Here is what applies to this plan:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Feature</th><th>Can Coach use it?</th><th>What it's for</th></tr></thead>
+        <tbody>
+          <tr><td>Keep the screen on</td><td class="rec">Yes</td><td>Sessions keep the screen awake (see below).</td></tr>
+          <tr><td>Spoken cues and sounds</td><td class="rec">Yes</td><td>“Set 2 of 3”, “Walk now”, “Rest over”.</td></tr>
+          <tr><td>Camera and photos</td><td class="rec">Yes</td><td>Optional monthly progress photos, kept on the phone.</td></tr>
+          <tr><td>Files</td><td class="rec">Yes</td><td>Back up and restore, and the calendar file.</td></tr>
+          <tr><td>Badge on the app icon</td><td class="rec">Yes</td><td>Shows a “1” until today's session is done.</td></tr>
+          <tr><td>Clipboard, when you tap Paste</td><td class="rec">Yes</td><td>Imports Health numbers that a Shortcut has copied (below).</td></tr>
+          <tr><td>Location (GPS)</td><td>Only while Coach is open on screen</td><td>Could measure run distance, but tracking stops when the phone locks. Your watch's Outdoor Run is more accurate, so I'd skip this.</td></tr>
+          <tr><td>Apple Health</td><td>No, but there's a workaround</td><td>An Apple Shortcut can read your latest weight, VO₂ max and workouts from Health and copy them. In Coach you tap <b>Import from Health</b>. That's two taps instead of typing.</td></tr>
+          <tr><td>Apple Watch, Bluetooth heart-rate straps</td><td>No</td><td>Keep recording on the watch. Coach shows your heart-rate targets.</td></tr>
+          <tr><td>Vibration</td><td>No</td><td>iPhone doesn't allow it for web apps, so Coach uses sounds and voice instead.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section>
+      <h3>Keeping the screen on</h3>
+      <ul>
+        <li>When a session starts, Coach asks iOS to keep the screen awake, using the Screen Wake Lock feature. This works for Home Screen web apps on current iOS. A green <b>Screen on</b> badge shows it's active.</li>
+        <li>iOS drops the lock when you leave the app or lock the phone. Coach asks for it again as soon as you come back, and the timers keep correct time in between.</li>
+        <li>The screen goes back to normal when the session ends or you close it, so your battery isn't drained the rest of the day.</li>
+        <li>If an iOS version ever refuses the wake lock, Coach falls back to a silent looping video, which also keeps the screen on.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>Music: Spotify and YouTube Music</h3>
+      <ul>
+        <li><b>Spotify: yes, with Premium.</b> You sign in once. Coach then shows play, pause, next and previous in the session, and can start a chosen playlist when a session starts, e.g. one for strength and one for runs. The music still plays in the Spotify app, and Coach sends it commands. A free account doesn't allow this.</li>
+        <li><b>YouTube Music: no direct control.</b> Google offers no way for other apps to control it. Coach can show an <b>Open YouTube Music</b> button, and you use the Lock Screen or Control Center music controls as usual.</li>
+        <li><b>Voice cues over your music.</b> Coach will play its cues over your music, briefly lowering it, instead of stopping it. iOS decides how web-app sound mixes with other apps, so I'll test this on a real iPhone before relying on it.</li>
+        <li>FitSplit's built-in tracks stay as an option if you don't want to use another app.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h3>More features you could add</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Feature</th><th>What it does</th><th>Suggestion</th></tr></thead>
+        <tbody>
+          <tr><td>Weight history per exercise</td><td>Logs the kg for each exercise. When you mark a session “Easy” and you hit every rep, Coach suggests going up 1–2 kg next time, as your weight rules say.</td><td class="rec">Recommended</td></tr>
+          <tr><td>Health import via Shortcut</td><td>Fills in your Monday weight and VO₂ max from Apple Health.</td><td class="rec">Recommended</td></tr>
+          <tr><td>Spotify controls</td><td>Music controls and a playlist for each session type.</td><td class="rec">Recommended if you have Premium</td></tr>
+          <tr><td>Waist measurement</td><td>A monthly waist measurement next to your weight. It often keeps moving when the scale stalls.</td><td class="rec">Recommended</td></tr>
+          <tr><td>Weekly summary</td><td>A Sunday-evening card covering sessions done, weight trend and next week's changes, e.g. “intervals start this week”.</td><td>Nice to have</td></tr>
+          <tr><td>Progress photos</td><td>A monthly front and side photo, with a side-by-side compare. Photos stay on the phone.</td><td>Nice to have</td></tr>
+          <tr><td>Pause for illness or holiday</td><td>Pauses the plan and moves the remaining days back, instead of marking them missed.</td><td>Nice to have</td></tr>
+          <tr><td>Daily protein and water ticks</td><td>Two quick taps a day, for the “plan your meals around protein” habit.</td><td>Optional</td></tr>
+          <tr><td>Rest-day mobility</td><td>An optional 10-minute stretch routine for Thursdays or Wednesdays, using the same animations.</td><td>Optional</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section>
+      <h3>Build steps</h3>
+      <ol>
+        <li>Plan data module and tests (all 168 days, dates, targets).</li>
+        <li>App shell: manifest, icons, offline support, tab bar, day links.</li>
+        <li>Today, Plan and Day screens with the animations.</li>
+        <li>Session players: strength sets and rest, and run/interval timers.</li>
+        <li>Logging and Progress: device storage, weigh-in, charts, backup and restore.</li>
+        <li>Reminders: calendar file first, then push if you choose it.</li>
+        <li>Checks on an emulated iPhone 15 (Playwright) and accessibility checks (axe), then deploy to GitHub Pages. You then install it from Safari.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h3>Decided</h3>
+      <div class="decisions">
+        <div class="decision"><b>Reminders:</b> calendar alerts (A), 20:00 the night before and 07:00 on the day, changeable in More.</div>
+        <div class="decision"><b>Name:</b> “Coach” on the Home Screen.</div>
+        <div class="decision"><b>Location:</b> inside the FitSplit site at <code>/ai_labs/coach/</code>.</div>
+        <div class="decision"><b>Art:</b> FitSplit's existing treadmill drawings for jogging and walking.</div>
+      </div>
+      <h3>Still to decide</h3>
+      <div class="decisions">
+        <div class="decision"><b>1. Extra features:</b> which ones from the table above should go into the first version?</div>
+        <div class="decision"><b>2. Spotify:</b> do you have Premium? If not, I'll leave out the Spotify controls and keep the Open-app buttons.</div>
+      </div>
+    </section>
+  </article>
+</div>
+
+<script>
+/* ===================== Plan data (generated from the checklist) ===================== */
+const EX = {
+  'goblet-squat': 'Goblet squat', 'incline-push-up': 'Push-up, hands on a bench', 'push-up': 'Push-up',
+  'reverse-lunge': 'Reverse lunge', 'standing-dumbbell-press': 'Dumbbell shoulder press', 'plank': 'Plank',
+  'plank-shoulder-tap': 'Plank with shoulder taps', 'dumbbell-romanian-deadlift': 'Romanian deadlift',
+  'one-arm-dumbbell-row': 'One-arm dumbbell row', 'glute-bridge': 'Glute bridge', 'single-leg-glute-bridge': 'Single-leg glute bridge',
+  'step-up': 'Step-up', 'side-plank': 'Side plank', 'calf-raise': 'Calf raise', 'single-leg-calf-raise': 'Single-leg calf raise',
+  'walking': 'Brisk walk', 'running': 'Jog', 'high-knees': 'Marching on the spot', 'arm-circles': 'Arm circles',
+  'bodyweight-squat': 'Bodyweight squat', 'good-morning': 'Hip hinge', 'leg-swings-stretch': 'Leg swings', 'forward-lunge': 'Bodyweight lunge',
+  'wall-calf-stretch': 'Calf stretch against a wall', 'standing-quad-stretch': 'Standing quad stretch', 'hamstring-stretch': 'Hamstring stretch, heel on a low step',
+  'kneeling-hip-flexor-stretch': 'Kneeling hip-flexor stretch', 'doorway-chest-stretch': 'Chest stretch in a doorway', 'childs-pose': "Child's pose",
+};
+const WARMUP = [['high-knees','1 min marching or brisk walking on the spot'],['arm-circles','10 arm circles each way'],['bodyweight-squat','10 bodyweight squats'],['good-morning','10 hip hinges'],['leg-swings-stretch','10 leg swings each leg'],['forward-lunge','5 bodyweight lunges each leg']];
+const STRETCH = [['wall-calf-stretch','30 s each leg'],['standing-quad-stretch','30 s each leg'],['hamstring-stretch','30 s each leg'],['kneeling-hip-flexor-stretch','30 s each side'],['doorway-chest-stretch','30 s'],['childs-pose','30 s']];
+const STRENGTH = {
+  1: { rest: '60–90 s', restSec: 75,
+    A: [['goblet-squat','goblet squat','× 10'],['incline-push-up','push-up, hands on a bench','× 8'],['reverse-lunge','reverse lunge','× 8 each leg'],['standing-dumbbell-press','dumbbell shoulder press','× 10'],['plank','plank','20–30 s']],
+    B: [['dumbbell-romanian-deadlift','Romanian deadlift','× 10'],['one-arm-dumbbell-row','one-arm dumbbell row','× 10 each arm'],['glute-bridge','glute bridge','× 12'],['step-up','step-up onto a low step','× 8 each leg'],['side-plank','side plank','20 s each side'],['calf-raise','calf raise','× 15']] },
+  2: { rest: '60–90 s', restSec: 75,
+    A: [['goblet-squat','goblet squat','× 12'],['push-up','push-up','× 10 (hands on a bench if needed)'],['reverse-lunge','reverse lunge','× 10 each leg'],['standing-dumbbell-press','dumbbell shoulder press','× 10'],['plank','plank','30–40 s']],
+    B: [['dumbbell-romanian-deadlift','Romanian deadlift','× 12'],['one-arm-dumbbell-row','one-arm dumbbell row','× 12 each arm'],['single-leg-glute-bridge','single-leg glute bridge','× 10 each leg'],['step-up','step-up holding dumbbells','× 10 each leg'],['side-plank','side plank','30 s each side'],['calf-raise','calf raise','× 15']] },
+  3: { rest: '90 s', restSec: 90,
+    A: [['goblet-squat','goblet squat, heavier','× 8–10'],['push-up','push-up','× 12 (feet raised if easy)'],['reverse-lunge','reverse lunge holding dumbbells','× 10 each leg'],['standing-dumbbell-press','dumbbell shoulder press, heavier','× 8–10'],['plank-shoulder-tap','plank with shoulder taps','40–45 s']],
+    B: [['dumbbell-romanian-deadlift','Romanian deadlift, heavier','× 8–10'],['one-arm-dumbbell-row','one-arm dumbbell row, heavier','× 10 each arm'],['single-leg-glute-bridge','single-leg glute bridge','× 12 each leg'],['step-up','step-up holding dumbbells','× 12 each leg'],['side-plank','side plank','40 s each side'],['single-leg-calf-raise','single-leg calf raise','× 12 each leg']] },
+};
+// [recovery, sets, goUp, easy main, long main, intervals [reps, hard, easy]]
+const WEEKS = [
+  [0,2,0,'30 min of 1 min jog / 2 min walk','45 min brisk walk'],
+  [0,2,0,'30 min of 1 min jog / 2 min walk','50 min brisk walk'],
+  [0,3,0,'35 min of 2 min jog / 2 min walk','50 min walk with 3 × 2 min easy jogs'],
+  [1,2,0,'25 min of 2 min jog / 2 min walk','40 min brisk walk'],
+  [0,3,0,'35 min of 3 min jog / 1 min walk','55 min walk with 4 × 3 min easy jogs'],
+  [0,3,0,'40 min of 3 min jog / 1 min walk','60 min walk with 5 × 3 min easy jogs'],
+  [0,3,0,'40 min of 5 min jog / 1 min walk','60 min of 5 min jog / 2 min walk'],
+  [1,2,0,'30 min of 5 min jog / 1 min walk','45 min of 5 min jog / 2 min walk'],
+  [0,3,0,'35 min, jogging with walk breaks as needed','55 min run/walk',[3,3,3]],
+  [0,3,0,'35 min, jogging in 10 min blocks with 1–2 min walks','60 min run/walk',[4,3,3]],
+  [0,3,1,'40 min, jogging in 15 min blocks with 1–2 min walks','60 min run/walk',[3,4,3]],
+  [1,2,0,'30 min easy jog/walk','45 min easy jog/walk',[3,3,3]],
+  [0,3,0,'40 min, jogging in 20 min blocks with a 2 min walk','60 min, mostly jogging',[4,4,3]],
+  [0,3,1,'45 min, jogging in 20 min blocks with a 2 min walk','65 min, mostly jogging',[4,4,3]],
+  [0,3,0,'45 min, including 30 min continuous jogging','70 min, mostly jogging',[4,4,3]],
+  [1,2,0,'30 min easy jog/walk','45 min easy jog/walk',[3,4,3]],
+  [0,3,0,'45 min continuous easy jog','60 min continuous easy jog',[4,4,3]],
+  [0,3,0,'45 min continuous easy jog','65 min easy jog',[5,3,2]],
+  [0,4,0,'50 min continuous easy jog','70 min easy jog',[5,4,3]],
+  [1,2,0,'30 min easy jog','50 min easy jog',[3,4,3]],
+  [0,4,0,'50 min continuous easy jog','70 min easy jog',[5,4,3]],
+  [0,4,0,'50 min continuous easy jog','75 min easy jog',[6,3,2]],
+  [0,3,0,'45 min continuous easy jog','75 min easy jog',[5,4,2.5]],
+  [1,2,0,'30 min easy jog','45 min easy jog',[3,3,3]],
+];
+const START = new Date(2026, 10, 9);
+const START_WEIGHT = 113, START_VO2 = 26; // entered by you on first launch in the real app
+const TYPES = {
+  easy: { label: 'Easy run/walk', tint: 'var(--t-run)', icon: 'running' },
+  A: { label: 'Strength A', tint: 'var(--t-a)', icon: 'goblet-squat' },
+  B: { label: 'Strength B', tint: 'var(--t-b)', icon: 'dumbbell-romanian-deadlift' },
+  long: { label: 'Long session', tint: 'var(--t-long)', icon: 'walking' },
+  int: { label: 'Intervals', tint: 'var(--t-int)', icon: 'running' },
+  rest: { label: 'Rest day', tint: 'var(--t-rest)', icon: 'walking' },
+};
+const DOW = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const fmt = (d) => `${DOW[(d.getDay()+6)%7]} ${d.getDate()} ${MON[d.getMonth()]}`;
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+function buildPlan() {
+  const days = [];
+  WEEKS.forEach((w, wi) => {
+    const [rec, sets, up, easyMain, longMain, iv] = w;
+    const week = wi + 1;
+    const phase = week <= 8 ? 1 : week <= 16 ? 2 : 3;
+    const pattern = week <= 8 ? ['easy','A','easy','rest','B','long','easy'] : ['easy','A','rest','int','easy','long','B'];
+    const S = STRENGTH[phase];
+    pattern.forEach((type, di) => {
+      const date = new Date(START); date.setDate(START.getDate() + wi*7 + di);
+      const d = { id: iso(date), date, week, phase, recovery: !!rec, type, dow: di };
+      if (type === 'easy') {
+        d.warm = '5 min brisk walk'; d.main = `${easyMain}, at 145–155 bpm (walk if you go over 155)`; d.cool = '5 min walk + stretch routine';
+        d.minutes = 10 + parseInt(easyMain) + 5; d.run = parseRun(easyMain);
+      } else if (type === 'long') {
+        d.main = `${longMain}, at talking pace, heart rate no higher than 155 bpm`; d.cool = '5 min walk + stretch routine';
+        d.minutes = parseInt(longMain) + 10; d.run = parseRun(longMain);
+      } else if (type === 'int') {
+        const [n, hard, easy] = iv;
+        d.warm = '10 min easy walk/jog'; d.main = `${n} × ${hard} min hard / ${easy} min easy; hard = 165+ bpm, a few words only; easy = walk or very slow jog`;
+        d.cool = '10 min easy walk + stretch routine'; d.minutes = 20 + Math.round(n*(hard+easy)) + 5;
+        d.intervals = { n, hard, easy };
+      } else if (type === 'A' || type === 'B') {
+        d.sets = sets; d.up = !!up; d.rest = S.rest; d.restSec = S.restSec; d.exercises = S[type];
+        d.minutes = 10 + Math.round(d.exercises.length * sets * 1.6);
+        if (week === 24 && type === 'B') d.extra = 'Then check your monthly VO₂ max in the Health app and compare it with your target.';
+      } else {
+        d.main = 'Optional 20–30 min gentle walk. Lay out your kit for tomorrow.'; d.minutes = 0;
+      }
+      days.push(d);
+    });
+  });
+  return days;
+}
+function parseRun(text) {
+  const m = text.match(/^(\d+) min of (\d+) min jog \/ (\d+) min walk/);
+  if (m) return { total: +m[1], jog: +m[2], walk: +m[3] };
+  return { total: parseInt(text), continuous: true };
+}
+const PLAN = buildPlan();
+const target = (week) => ({ weight: +(START_WEIGHT - 0.7*week).toFixed(1), vo2: +(START_VO2 + 0.5*week).toFixed(1) });
+function strengthTitle(d) { return `${TYPES[d.type].label}`; }
+function strengthSummary(d) { return `${d.sets} sets of each${d.up ? ', go up in weight' : ''}, rest ${d.rest}`; }
+function dayHeadline(d) {
+  if (d.type === 'A' || d.type === 'B') return `${d.exercises.length} exercises · ${d.sets} sets`;
+  if (d.type === 'rest') return 'Optional gentle walk';
+  if (d.type === 'int') return `${d.intervals.n} × ${d.intervals.hard} min hard / ${d.intervals.easy} min easy`;
+  if (d.type === 'long') return d.main.split(',')[0];
+  return d.main.split(', at')[0];
+}
+
+/* ===================== Mock state ===================== */
+const TODAY = '2026-11-10';
+const state = {
+  tab: 'today', stack: [], weekSel: 1,
+  done: { '2026-11-09': { minutes: 41, hr: 151, feel: 'Good' } },
+  weights: {}, // kg used per exercise
+  remind: { method: 'calendar', evening: true, eveningAt: '20:00', morning: true, morningAt: '07:00' },
+};
+const SAMPLE_LOG = [ // illustrative only
+  { week: 0, weight: 113.0, vo2: 26.0 }, { week: 1, weight: 112.6, vo2: 26.2 }, { week: 2, weight: 111.4, vo2: 26.8 },
+  { week: 3, weight: 111.1, vo2: 27.1 }, { week: 4, weight: 110.0, vo2: 27.9 }, { week: 5, weight: 109.8, vo2: 28.1 }, { week: 6, weight: 108.7, vo2: 28.9 },
+];
+const dayById = (id) => PLAN.find((d) => d.id === id);
+const today = dayById(TODAY);
+
+/* ===================== Rendering helpers ===================== */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+function anim(slug, tint, cls = '') {
+  return `<span class="fm ${cls}" data-anim style="--tint:${tint}" role="img" aria-label="${esc(EX[slug] || slug)} animation">` +
+    [1,2,3].map((i) => `<span class="f f-${slug}-${i}${i===1?' on':''}"></span>`).join('') + `</span>`;
+}
+const ICONS = {
+  today: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+  plan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+  progress: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M7.5 15l4-4.5 3 2.5 5-6"/></svg>',
+  more: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+  tick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+};
+function statusOf(d) { if (state.done[d.id]) return 'done'; if (d.id < TODAY && d.type !== 'rest') return 'missed'; return 'upcoming'; }
+function checkHtml(d) {
+  const s = statusOf(d);
+  return `<span class="check ${s}" aria-label="${s === 'done' ? 'Done' : s === 'missed' ? 'Missed' : 'Not done yet'}">${s === 'done' ? ICONS.tick : ''}</span>`;
+}
+function dayItem(d) {
+  const t = TYPES[d.type];
+  return `<button class="item" data-open-day="${d.id}">
+    <span class="thumb">${anim(t.icon, t.tint)}</span>
+    <span class="grow"><span class="t">${DOW[d.dow]} ${d.date.getDate()} · ${t.label}${d.id === TODAY ? '<span class="today-tag">TODAY</span>' : ''}</span><span class="d">${esc(dayHeadline(d))}${d.minutes ? ` · ~${d.minutes} min` : ''}</span></span>
+    ${checkHtml(d)}</button>`;
+}
+
+/* ===================== Screens ===================== */
+function screenToday() {
+  const d = today, t = TYPES[d.type];
+  const weekDays = PLAN.filter((x) => x.week === d.week);
+  const doneCount = weekDays.filter((x) => state.done[x.id]).length;
+  const tomorrow = PLAN[PLAN.indexOf(d) + 1];
+  const tg = target(d.week);
+  return `
+    <p class="sub">${fmt(d.date)} · Week ${d.week} of 24</p>
+    <h1 class="large-title">Today</h1>
+    <div class="card hero" style="--tint:${t.tint}">
+      <div class="chips"><span class="chip" style="--tint:${t.tint}"><i></i>${t.label}</span><span class="chip">~${d.minutes} min</span><span class="chip">${d.sets} sets</span></div>
+      <div class="stage">${anim(d.exercises[0][0], t.tint)}</div>
+      <h2>Goblet squat, push-up, lunge, press, plank</h2>
+      <p class="sub">${strengthSummary(d)}. Warm-up routine first, stretch routine to finish.</p>
+      <button class="btn" data-start="${d.id}">Start session</button>
+      <button class="btn ghost" data-open-day="${d.id}">See the full day</button>
+    </div>
+    <p class="section-label">This week</p>
+    <div class="kv">
+      <div class="card"><b>${doneCount}/6</b><span>sessions done</span></div>
+      <div class="card"><b>${tg.weight}</b><span>kg target by Sun</span></div>
+      <div class="card"><b>${tg.vo2}</b><span>VO₂ max target</span></div>
+    </div>
+    <p class="section-label">Tomorrow</p>
+    <button class="card tomorrow item" data-open-day="${tomorrow.id}" style="border-radius:18px">
+      <span class="thumb">${anim(TYPES[tomorrow.type].icon, TYPES[tomorrow.type].tint)}</span>
+      <span class="grow"><span class="t">${fmt(tomorrow.date)} · ${TYPES[tomorrow.type].label}</span><span class="d">${esc(dayHeadline(tomorrow))}, ~${tomorrow.minutes} min. Lay out your running shoes and water bottle tonight.</span></span>
+      <span class="chev">›</span>
+    </button>
+    <p class="section-label">Reminder preview</p>
+    <div class="notif-preview" aria-label="Example 20:00 reminder">
+      <span class="app-ic"><span style="position:relative;width:30px;height:30px">${anim('running','var(--t-run)')}</span></span>
+      <div><div class="t">Tomorrow: Easy run/walk <span>20:00</span></div><p>30 min of 1 min jog / 2 min walk at 145–155 bpm. Lay out your kit tonight.</p></div>
+    </div>`;
+}
+
+function screenPlan() {
+  const wk = state.weekSel;
+  const days = PLAN.filter((d) => d.week === wk);
+  const first = days[0], last = days[6], tg = target(wk);
+  const strip = WEEKS.map((w, i) => `<button class="wk${w[0] ? ' rec' : ''}" aria-pressed="${i+1 === wk}" data-week="${i+1}" aria-label="Week ${i+1}${w[0] ? ', recovery week' : ''}"><span>WK</span><b>${i+1}</b></button>`).join('');
+  return `
+    <h1 class="large-title">Plan</h1>
+    <div class="week-strip" id="weekstrip">${strip}</div>
+    <div class="week-head">
+      <h3 style="font-size:20px">Week ${wk}${WEEKS[wk-1][0] ? ' · recovery week' : ''}${wk === 24 ? ' + final check' : ''}</h3>
+      <p class="sub">${fmt(first.date)} – ${fmt(last.date)} · targets by Sunday ${tg.weight} kg · VO₂ max ${tg.vo2}</p>
+      ${wk === 9 ? '<p class="note">From this week Wednesday becomes the rest day and Strength B moves to Sunday, to fit in intervals.</p>' : ''}
+    </div>
+    <div class="list">${days.map(dayItem).join('')}</div>
+    <p class="note" style="margin-top:12px">Recovery weeks (4, 8, 12, 16, 20, 24) are underlined in amber. Missed a day? Carry on from the next day and don't double up.</p>`;
+}
+
+function exerciseRows(list, tint) {
+  return `<div class="list">${list.map(([slug, name, amt]) => `<div class="item"><span class="thumb">${anim(slug, tint)}</span><span class="grow"><span class="t">${esc(name[0].toUpperCase() + name.slice(1))}</span><span class="d">${esc(amt)}</span></span></div>`).join('')}</div>`;
+}
+function screenDay(id) {
+  const d = dayById(id), t = TYPES[d.type];
+  let body = '';
+  if (d.type === 'A' || d.type === 'B') {
+    body = `
+      <div class="block"><h4>Warm-up routine · 5 min</h4></div>
+      ${exerciseRows(WARMUP.map(([s, a]) => [s, EX[s], a]), 'var(--app-ink)')}
+      <div class="block"><h4>Main · ${esc(strengthSummary(d))}</h4></div>
+      ${exerciseRows(d.exercises, t.tint)}
+      <p class="note">Pick a weight where the last 2 reps of each set are hard but your form stays clean. When every set feels like you had 2 more reps in you, go up 1–2 kg.</p>
+      <div class="block"><h4>Stretch routine · 5 min</h4><p class="note">Hold each for 30 s, no bouncing.</p></div>
+      ${exerciseRows(STRETCH.map(([s, a]) => [s, EX[s], a]), 'var(--good)')}
+      ${d.extra ? `<div class="block"><h4>Final check</h4><p>${esc(d.extra)}</p></div>` : ''}`;
+  } else if (d.type === 'rest') {
+    body = `<div class="block"><h4>Rest day</h4><p>${esc(d.main)}</p></div>`;
+  } else {
+    body = `
+      ${d.warm ? `<div class="block"><h4>Warm-up</h4><p>${esc(d.warm)}</p></div>` : ''}
+      <div class="block"><h4>Main</h4><p>${esc(d.main)}</p></div>
+      <div class="block"><h4>Cool-down</h4><p>${esc(d.cool)}</p></div>
+      <div class="zone"><span>Easy</span><b style="color:var(--t-run)">145–155 bpm</b></div>
+      ${d.type === 'int' ? '<div class="zone"><span>Hard</span><b style="color:var(--t-int)">165+ bpm</b></div>' : ''}
+      <p class="note">Record it on your watch as Outdoor Run. Choose grass or park paths when you can.</p>
+      <p class="section-label">Stretch routine</p>
+      ${exerciseRows(STRETCH.map(([s, a]) => [s, EX[s], a]), 'var(--good)')}`;
+  }
+  return `
+    <div class="navbar"><button class="back" data-back aria-label="Back">‹ ${state.stack.length > 1 ? 'Back' : state.tab === 'today' ? 'Today' : 'Plan'}</button></div>
+    <p class="sub">Week ${d.week}${d.recovery ? ' · recovery week' : ''}</p>
+    <h1 class="large-title">${fmt(d.date)}</h1>
+    <div class="card hero" style="--tint:${t.tint}">
+      <div class="chips"><span class="chip" style="--tint:${t.tint}"><i></i>${t.label}</span>${d.minutes ? `<span class="chip">~${d.minutes} min</span>` : ''}${statusOf(d) === 'done' ? '<span class="chip" style="--tint:var(--good)"><i></i>Done</span>' : ''}</div>
+      <div class="stage">${anim(d.exercises ? d.exercises[0][0] : t.icon, t.tint)}</div>
+      ${d.type !== 'rest' ? `<button class="btn" data-start="${d.id}">Start session</button>` : ''}
+      <button class="btn ghost" data-mark="${d.id}">${state.done[d.id] ? 'Mark as not done' : 'Mark as done'}</button>
+    </div>
+    <div class="steps" style="margin-top:14px">${body}</div>
+    <p class="safety" style="margin-top:16px">If any session brings on chest pain, dizziness or unusual breathlessness, stop and see your GP.</p>`;
+}
+
+function lineChart(points, targetFn, key, lo, hi, unit) {
+  const W = 340, H = 170, pl = 34, pr = 22, pt = 12, pb = 24;
+  const x = (w) => pl + (w / 24) * (W - pl - pr);
+  const y = (v) => pt + (1 - (v - lo) / (hi - lo)) * (H - pt - pb);
+  const ticks = [lo, (lo + hi) / 2, hi];
+  const grid = ticks.map((v) => `<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="#2a2a28" stroke-width="1"/><text x="${pl-6}" y="${y(v)+4}" text-anchor="end" fill="#8a8a84" font-size="10">${v}</text>`).join('');
+  const xt = [0, 8, 16, 24].map((w) => `<text x="${x(w)}" y="${H-6}" text-anchor="middle" fill="#8a8a84" font-size="10">${w === 0 ? 'Start' : 'Wk ' + w}</text>`).join('');
+  const tgt = `<path d="M${x(0)},${y(targetFn(0))} L${x(24)},${y(targetFn(24))}" stroke="#8a8a84" stroke-width="1.5" stroke-dasharray="4 4" fill="none"/>`;
+  const path = points.map((p, i) => `${i ? 'L' : 'M'}${x(p.week)},${y(p[key])}`).join(' ');
+  const last = points[points.length - 1];
+  const dots = points.map((p) => `<circle cx="${x(p.week)}" cy="${y(p[key])}" r="${p === last ? 4.5 : 2.5}" fill="var(--t-run)"/>`).join('');
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${unit} chart: latest ${last[key]} at week ${last.week}, target line dashed">${grid}${xt}${tgt}<path d="${path}" stroke="var(--t-run)" stroke-width="2.5" fill="none" stroke-linejoin="round"/>${dots}</svg>`;
+}
+function screenProgress() {
+  const done = Object.keys(state.done).length, due = PLAN.filter((d) => d.id <= TODAY && d.type !== 'rest').length;
+  const last = SAMPLE_LOG[SAMPLE_LOG.length - 1];
+  return `
+    <h1 class="large-title">Progress</h1>
+    <div class="card" style="display:grid;gap:12px">
+      <div class="row" style="justify-content:space-between"><h3>Monday weigh-in</h3><span class="sub">Mon 16 Nov</span></div>
+      <p class="note">After the toilet, before eating. Read VO₂ max from the Health app.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field"><label for="wi-kg">Weight (kg)</label><input class="input" id="wi-kg" inputmode="decimal" placeholder="112.3"></div>
+        <div class="field"><label for="wi-vo2">VO₂ max</label><input class="input" id="wi-vo2" inputmode="decimal" placeholder="26.5"></div>
+      </div>
+      <button class="btn" data-toast="Saved. Week 1: 112.3 kg target · VO₂ max 26.5 target">Save weigh-in</button>
+      <button class="btn ghost" data-toast="Filled in from Health: 112.4 kg, VO₂ max 26.4 (copied by your Coach Shortcut)">Import from Health</button>
+      <p class="note">Run the “Coach: Health” Shortcut first. It copies your latest weight, VO₂ max and workouts so Coach can fill this in.</p>
+    </div>
+    <div class="row" style="justify-content:space-between;margin-top:22px"><p class="section-label" style="margin:0">Weight</p><span class="sample-flag">SAMPLE DATA</span></div>
+    <div class="card" style="margin-top:8px;display:grid;gap:8px">
+      <div class="row" style="justify-content:space-between"><b style="font:800 26px var(--font)">${last.weight} kg</b><span class="pill-target">target ${target(last.week).weight} kg · −${(START_WEIGHT - last.weight).toFixed(1)} kg so far</span></div>
+      ${lineChart(SAMPLE_LOG, (w) => START_WEIGHT - 0.7*w, 'weight', 95, 115, 'Weight')}
+      <div class="legend"><span><i style="background:var(--t-run)"></i>You</span><span><i style="background:#8a8a84"></i>Target, −0.7 kg a week</span></div>
+    </div>
+    <p class="section-label">VO₂ max</p>
+    <div class="card" style="display:grid;gap:8px">
+      <div class="row" style="justify-content:space-between"><b style="font:800 26px var(--font)">${last.vo2}</b><span class="pill-target">target ${target(last.week).vo2} · goal 38.0 by 25 Apr</span></div>
+      ${lineChart(SAMPLE_LOG, (w) => START_VO2 + 0.5*w, 'vo2', 25, 39, 'VO2 max')}
+      <p class="note">Judge progress on the 2–3 week trend. Weekly numbers bounce around.</p>
+    </div>
+    <p class="section-label">Consistency</p>
+    <div class="kv">
+      <div class="card"><b>${done}/${due}</b><span>sessions due so far</span></div>
+      <div class="card"><b>1</b><span>day streak</span></div>
+      <div class="card"><b>162</b><span>days to go</span></div>
+    </div>`;
+}
+
+function screenMore() {
+  const r = state.remind;
+  const ref = (title, text) => `<details class="block"><summary style="font:600 16px var(--font);min-height:32px;cursor:pointer">${title}</summary><p class="note" style="margin-top:6px">${text}</p></details>`;
+  return `
+    <h1 class="large-title">More</h1>
+    <p class="section-label" style="margin-top:0">Reminders</p>
+    <div class="card" style="display:grid;gap:14px">
+      <div class="seg" role="group" aria-label="Reminder method">
+        <button aria-pressed="${r.method === 'calendar'}" data-method="calendar">Calendar alerts</button>
+        <button aria-pressed="${r.method === 'push'}" data-method="push">Notifications</button>
+      </div>
+      <div class="row"><span class="grow" style="flex:1"><b style="font:600 16px var(--font)">Night before</b><br><span class="note">“Tomorrow: Easy run/walk. Lay out your kit.”</span></span><input class="input" style="width:116px;font-size:16px;padding:0 10px" type="time" id="r-eve" value="${r.eveningAt}" aria-label="Night-before reminder time"><input type="checkbox" class="toggle" id="t-eve" ${r.evening ? 'checked' : ''} aria-label="Night-before reminder"></div>
+      <div class="row"><span class="grow" style="flex:1"><b style="font:600 16px var(--font)">Morning of</b><br><span class="note">“Today: Strength A, ~35 min.”</span></span><input class="input" style="width:116px;font-size:16px;padding:0 10px" type="time" id="r-morn" value="${r.morningAt}" aria-label="Morning reminder time"><input type="checkbox" class="toggle" id="t-morn" ${r.morning ? 'checked' : ''} aria-label="Morning reminder"></div>
+      ${r.method === 'calendar'
+        ? `<button class="btn" data-toast="iOS would now ask: Add all 168 events to Calendar?">Add plan to Calendar</button><p class="note">Adds 168 events, 9 Nov 2026 to 25 Apr 2027. Each one holds the full instructions and a link that opens that day in Coach.</p>`
+        : `<button class="btn" data-toast="iOS would now ask: “Coach” Would Like to Send You Notifications">Turn on notifications</button><p class="note">Needs iOS 16.4 or later, with Coach opened from the Home Screen. Reminders skip days you've already marked done.</p>`}
+    </div>
+    <p class="section-label">Music</p>
+    <div class="list">
+      <button class="item" data-toast="iOS would now open Spotify to sign in (Premium needed for controls)"><span class="grow"><span class="t">Connect Spotify</span><span class="d">Play, pause and skip from your session, and start a playlist per session type</span></span><span class="chev">›</span></button>
+      <div class="item"><span class="grow"><span class="t">Strength playlist</span></span><span class="sub">Workout Mix</span></div>
+      <div class="item"><span class="grow"><span class="t">Run playlist</span></span><span class="sub">Easy Run 150 bpm</span></div>
+      <div class="item"><span class="grow"><span class="t">Voice cues over music</span><span class="d">Music gets quieter while a cue plays, then comes back up</span></span><input type="checkbox" class="toggle" checked aria-label="Voice cues over music"></div>
+    </div>
+    <p class="section-label">Your starting numbers</p>
+    <div class="list">
+      <div class="item"><span class="grow"><span class="t">Start date</span></span><span class="sub">Mon 9 Nov 2026</span></div>
+      <div class="item"><span class="grow"><span class="t">Start weight</span></span><span class="sub">113.0 kg</span></div>
+      <div class="item"><span class="grow"><span class="t">Start VO₂ max</span></span><span class="sub">26.0</span></div>
+    </div>
+    <p class="section-label">Reference</p>
+    <div class="steps">
+      ${ref('Warm-up routine', 'Before every strength session, 5 min: 1 min marching or brisk walking on the spot · 10 arm circles each way · 10 bodyweight squats · 10 hip hinges · 10 leg swings each leg · 5 bodyweight lunges each leg.')}
+      ${ref('Stretch routine', 'After every session, 5 min, hold each for 30 s, no bouncing: calf stretch against a wall · standing quad stretch · hamstring stretch with heel on a low step · kneeling hip-flexor stretch · chest stretch in a doorway · child\'s pose.')}
+      ${ref('Heart rate', 'Easy = 145–155 bpm, able to talk in full sentences. Hard = 165+ bpm, a few words only. Record every run or run/walk as Outdoor Run.')}
+      ${ref('Choosing weights', 'Pick a weight where the last 2 reps of each set are hard but your form stays clean. When every set feels like you had 2 more reps in you, go up 1–2 kg.')}
+      ${ref('Kit', 'Cushioned running shoes, a pair of adjustable dumbbells, a sturdy step or bench, and a water bottle. Choose grass or park paths when you can.')}
+      ${ref('Missed a day?', 'Carry on from the next day; don\'t double up. If any session brings on chest pain, dizziness or unusual breathlessness, stop and see your GP.')}
+    </div>
+    <p class="section-label">Your data</p>
+    <div class="list">
+      <button class="item" data-toast="Saved coach-backup-2026-11-10.json to Files"><span class="grow"><span class="t">Back up to Files</span><span class="d">Last backup: never</span></span><span class="chev">›</span></button>
+      <button class="item" data-toast="iOS would now open Files to choose a backup"><span class="grow"><span class="t">Restore from a backup</span></span><span class="chev">›</span></button>
+    </div>
+    <p class="note" style="margin-top:12px">Your log stays on this iPhone. Exercise illustrations by Bryl Lim, based on Everkinetic, CC BY-SA 4.0.</p>`;
+}
+
+/* ===================== Session player ===================== */
+let timer = null;
+const sess = { day: null, steps: [], i: 0, setsDone: 0, rest: 0, running: false, remaining: 0 };
+function stopTimer() { clearInterval(timer); timer = null; sess.running = false; }
+function openSession(id) {
+  const d = dayById(id);
+  sess.day = d; sess.i = 0; sess.setsDone = 0; sess.rest = 0; stopTimer();
+  if (d.type === 'A' || d.type === 'B') {
+    sess.steps = [{ kind: 'warm' }, ...d.exercises.map((e) => ({ kind: 'ex', e })), { kind: 'stretch' }, { kind: 'finish' }];
+  } else {
+    const r = d.run;
+    const main = d.intervals ? { kind: 'int', ...d.intervals } : r && !r.continuous ? { kind: 'jogwalk', ...r } : { kind: 'steady', total: r ? r.total : 30 };
+    sess.steps = [{ kind: 'timed', label: 'Warm-up', note: d.warm || '5 min brisk walk', sec: (d.type === 'int' ? 10 : 5) * 60, slug: 'walking' }, main,
+      { kind: 'timed', label: 'Cool-down', note: d.type === 'int' ? '10 min easy walk' : '5 min walk', sec: (d.type === 'int' ? 10 : 5) * 60, slug: 'walking' }, { kind: 'stretch' }, { kind: 'finish' }];
+  }
+  const el = $('#session');
+  el.hidden = false; requestAnimationFrame(() => el.classList.add('open'));
+  renderSession();
+  $('#sess-close')?.focus();
+}
+function closeSession() {
+  stopTimer();
+  const el = $('#session'); el.classList.remove('open');
+  setTimeout(() => { el.hidden = true; el.innerHTML = ''; }, 320);
+}
+const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.max(0, Math.floor(s % 60))).padStart(2, '0')}`;
+function ring(frac, tint) {
+  const C = 2 * Math.PI * 96;
+  return `<svg viewBox="0 0 220 220" aria-hidden="true"><circle cx="110" cy="110" r="96" stroke="#272727" stroke-width="12" fill="none"/><circle cx="110" cy="110" r="96" stroke="${tint}" stroke-width="12" fill="none" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - frac)}"/></svg>`;
+}
+function runPhases(step) {
+  if (step.kind === 'jogwalk') {
+    const out = []; let t = 0;
+    while (t < step.total * 60) { out.push(['Jog', step.jog * 60, 'var(--t-run)', 'running']); t += step.jog * 60; if (t >= step.total * 60) break; out.push(['Walk', step.walk * 60, 'var(--app-ink)', 'walking']); t += step.walk * 60; }
+    return out;
+  }
+  if (step.kind === 'int') {
+    const out = []; for (let k = 0; k < step.n; k++) { out.push([`Hard ${k + 1} of ${step.n}`, step.hard * 60, 'var(--t-int)', 'running']); out.push(['Easy', step.easy * 60, 'var(--app-ink)', 'walking']); } return out;
+  }
+  return [['Easy jog', step.total * 60, 'var(--t-run)', 'running']];
+}
+function renderSession() {
+  const d = sess.day, t = TYPES[d.type], step = sess.steps[sess.i];
+  const el = $('#session');
+  const pct = Math.round((sess.i / (sess.steps.length - 1)) * 100);
+  let body = '', foot = '';
+  if (step.kind === 'warm' || step.kind === 'stretch') {
+    const items = step.kind === 'warm' ? WARMUP : STRETCH;
+    body = `<p class="sub">${step.kind === 'warm' ? 'Step 1 · 5 min' : 'Last step · 5 min, 30 s each, no bouncing'}</p><h2 style="font:800 28px var(--font)">${step.kind === 'warm' ? 'Warm-up routine' : 'Stretch routine'}</h2>
+      ${exerciseRows(items.map(([s, a]) => [s, EX[s], a]), step.kind === 'warm' ? 'var(--app-ink)' : 'var(--good)')}`;
+    foot = `<button class="btn ghost small" data-sess-back aria-label="Previous step">‹</button><button class="btn" data-sess-next>${step.kind === 'warm' ? 'Warm-up done' : 'Stretches done'}</button>`;
+  } else if (step.kind === 'ex') {
+    const [slug, name, amt] = step.e;
+    const exNo = sess.steps.filter((s) => s.kind === 'ex').indexOf(step) + 1, exTotal = d.exercises.length;
+    const sets = Array.from({ length: d.sets }, (_, k) => `<button class="set${k < sess.setsDone ? ' done' : ''}" data-set="${k}" aria-label="Set ${k + 1}${k < sess.setsDone ? ', done' : ''}">${k + 1}</button>`).join('');
+    const kg = state.weights[slug] ?? '';
+    body = `<p class="sub">Exercise ${exNo} of ${exTotal}</p>
+      <div class="stage sq" style="--tint:${t.tint}">${anim(slug, t.tint)}</div>
+      <div style="display:grid;gap:2px;text-align:center"><h2 style="font:800 28px var(--font);letter-spacing:-.03em">${esc(name[0].toUpperCase() + name.slice(1))}</h2><p style="font:700 20px var(--font);color:${t.tint}">${esc(amt)}</p></div>
+      <div class="sets" role="group" aria-label="Sets">${sets}</div>
+      ${sess.rest > 0 ? `<div class="rest-bar" role="timer" aria-live="off"><span>Rest</span><b style="font:800 24px var(--font);font-variant-numeric:tabular-nums">${mmss(sess.rest)}</b><button class="btn ghost small" data-skip-rest>Skip</button></div>` : `<p class="note" style="text-align:center">Tap a set when you finish it. A ${d.rest} rest timer starts on its own.</p>`}
+      ${/plank|side-plank/.test(slug) ? '' : `<div class="field"><label for="kg">Weight used (kg)</label><input class="input" id="kg" inputmode="decimal" placeholder="${slug === 'goblet-squat' ? 'Last time: 12 kg' : 'kg'}" value="${kg}"></div>`}`;
+    foot = `<button class="btn ghost small" data-sess-back aria-label="Previous step">‹</button><button class="btn" data-sess-next>${exNo === exTotal ? 'On to stretches' : 'Next exercise'}</button>`;
+  } else if (step.kind === 'timed') {
+    if (!sess.remaining) sess.remaining = step.sec;
+    body = `<p class="sub">${esc(step.note)}</p>
+      <div class="ring">${ring(1 - sess.remaining / step.sec, 'var(--app-ink)')}<div class="inner"><span class="phase-name" style="--tint:var(--app-ink)">${step.label}</span><span class="big-timer">${mmss(sess.remaining)}</span></div></div>
+      <div class="stage" style="aspect-ratio:2">${anim(step.slug, 'var(--app-ink)')}</div>`;
+    foot = `<button class="btn ghost small" data-sess-next>Skip</button><button class="btn" data-play>${sess.running ? 'Pause' : 'Start'}</button>`;
+  } else if (step.kind === 'jogwalk' || step.kind === 'int' || step.kind === 'steady') {
+    const phases = runPhases(step);
+    if (sess.phase == null) { sess.phase = 0; sess.remaining = phases[0][1]; }
+    const [label, len, tint, slug] = phases[sess.phase];
+    const next = phases[sess.phase + 1];
+    const totalLeft = phases.slice(sess.phase + 1).reduce((a, p) => a + p[1], 0) + sess.remaining;
+    const hard = step.kind === 'int' && label.startsWith('Hard');
+    body = `<p class="sub">${esc(d.type === 'int' ? 'Intervals' : d.main.split(',')[0])}</p>
+      <div class="ring">${ring(1 - sess.remaining / len, tint)}<div class="inner"><span class="phase-name" style="--tint:${tint}">${label}</span><span class="big-timer">${mmss(sess.remaining)}</span><span class="sub">${next ? `then ${next[0].toLowerCase()} ${mmss(next[1])}` : 'last block'}</span></div></div>
+      <div class="zone"><span>${hard ? 'Hard: a few words only' : 'Easy: full sentences'}</span><b style="color:${hard ? 'var(--t-int)' : 'var(--t-run)'}">${hard ? '165+ bpm' : '145–155 bpm'}</b></div>
+      <div class="stage" style="aspect-ratio:2">${anim(slug, tint)}</div>
+      <p class="note" style="text-align:center">${mmss(totalLeft)} of main session left · a voice cue plays at each change. ${hard ? '' : 'Walk if you go over 155.'}</p>`;
+    foot = `<button class="btn ghost small" data-phase-skip>Skip</button><button class="btn" data-play>${sess.running ? 'Pause' : 'Start'}</button>`;
+  } else if (step.kind === 'finish') {
+    body = `<div class="stage" style="--tint:var(--good)">${anim(TYPES[d.type].icon, 'var(--good)')}</div>
+      <h2 style="font:800 30px var(--font);text-align:center">Session done</h2>
+      <p class="sub" style="text-align:center">${fmt(d.date)} · ${t.label}</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field"><label for="f-min">Duration (min)</label><input class="input" id="f-min" inputmode="numeric" value="${d.minutes}"></div>
+        <div class="field"><label for="f-hr">Avg heart rate</label><input class="input" id="f-hr" inputmode="numeric" placeholder="bpm"></div>
+      </div>
+      <div class="field"><label>How did it feel?</label><div class="seg" style="grid-template-columns:repeat(3,1fr)" role="group" aria-label="How did it feel"><button aria-pressed="false" data-feel>Easy</button><button aria-pressed="true" data-feel>Right</button><button aria-pressed="false" data-feel>Too hard</button></div></div>
+      ${d.type !== 'A' && d.type !== 'B' ? '<p class="note">Remember to save it on your watch as Outdoor Run.</p>' : ''}`;
+    foot = `<button class="btn ghost small" data-sess-back aria-label="Previous step">‹</button><button class="btn" data-finish>Save and finish</button>`;
+  }
+  el.style.setProperty('--tint', t.tint);
+  el.innerHTML = `
+    <div class="session-top"><button class="icon-btn" id="sess-close" data-sess-close aria-label="End session">✕</button><span class="sub">${t.label} · Week ${d.week}</span><span class="awake" title="The screen won't dim or lock during this session"><i></i>Screen on</span></div>
+    <div class="progress" style="--tint:${t.tint}"><i style="width:${pct}%"></i></div>
+    <div class="session-body">${body}</div>
+    <div style="padding:0 18px">${musicBar()}</div>
+    <div class="session-foot">${foot}</div>
+    <div id="confirm" hidden style="position:absolute;inset:0;background:rgb(0 0 0 / .6);display:grid;place-items:end center;padding:18px 18px 30px">
+      <div class="card" style="width:100%;display:grid;gap:10px;background:#222"><h3>End this session?</h3><p class="note">Your sets so far are kept. The day stays not done until you finish.</p><button class="btn" data-end-yes style="background:var(--t-a)">End session</button><button class="btn ghost" data-end-no>Keep going</button></div>
+    </div>`;
+}
+function musicBar() {
+  return `<div class="music" aria-label="Music controls">
+    <span class="art" aria-hidden="true"></span>
+    <span style="min-width:0"><span class="t" style="display:block">Workout Mix</span><span class="s">Spotify · iPhone</span></span>
+    <span class="ctl"><button aria-label="Previous track" data-toast="Spotify: previous track">⏮</button><button aria-label="Pause music" data-toast="Spotify: paused">⏸</button><button aria-label="Next track" data-toast="Spotify: next track">⏭</button></span>
+  </div>`;
+}
+function tickSession() {
+  const step = sess.steps[sess.i];
+  if (step.kind === 'ex') { sess.rest = Math.max(0, sess.rest - 1); if (!sess.rest) stopTimer(); renderSession(); return; }
+  sess.remaining -= 1;
+  if (sess.remaining <= 0) {
+    if (step.kind === 'timed') { stopTimer(); nextStep(); return; }
+    const phases = runPhases(step);
+    if (sess.phase + 1 < phases.length) { sess.phase += 1; sess.remaining = phases[sess.phase][1]; toast(`${phases[sess.phase][0]} now`); }
+    else { stopTimer(); nextStep(); return; }
+  }
+  renderSession();
+}
+function nextStep() { stopTimer(); sess.i = Math.min(sess.i + 1, sess.steps.length - 1); sess.setsDone = 0; sess.rest = 0; sess.remaining = 0; sess.phase = null; renderSession(); $('.session-body').scrollTop = 0; }
+function prevStep() { stopTimer(); sess.i = Math.max(0, sess.i - 1); sess.setsDone = 0; sess.rest = 0; sess.remaining = 0; sess.phase = null; renderSession(); }
+
+/* ===================== Shell ===================== */
+function render() {
+  const view = $('#view');
+  const top = state.stack[state.stack.length - 1];
+  view.innerHTML = top ? screenDay(top) : ({ today: screenToday, plan: screenPlan, progress: screenProgress, more: screenMore })[state.tab]();
+  $('#tabbar').innerHTML = [['today','Today'],['plan','Plan'],['progress','Progress'],['more','More']]
+    .map(([k, l]) => `<button class="tab" data-tab="${k}" ${state.tab === k ? 'aria-current="page"' : ''}>${ICONS[k]}<span>${l}</span></button>`).join('');
+  if (!top && state.tab === 'plan') { const b = view.querySelector('.wk[aria-pressed="true"]'); b && b.scrollIntoView({ inline: 'center', block: 'nearest' }); }
+}
+function go(fn) { fn(); render(); $('#view').scrollTop = 0; }
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2200); }
+
+$('#screen').addEventListener('click', (e) => {
+  const b = e.target.closest('button, [data-open-day]'); if (!b) return;
+  const ds = b.dataset;
+  if (ds.tab) go(() => { if (state.tab === ds.tab) state.stack = []; state.tab = ds.tab; state.stack = []; });
+  else if (ds.openDay) go(() => state.stack.push(ds.openDay));
+  else if ('back' in ds) go(() => state.stack.pop());
+  else if (ds.week) go(() => { state.weekSel = +ds.week; });
+  else if (ds.start) openSession(ds.start);
+  else if (ds.mark) { if (state.done[ds.mark]) delete state.done[ds.mark]; else state.done[ds.mark] = {}; render(); toast(state.done[ds.mark] ? 'Marked as done' : 'Marked as not done'); }
+  else if (ds.method) { state.remind.method = ds.method; render(); }
+  else if (ds.toast) toast(ds.toast);
+  else if ('sessClose' in ds) $('#confirm').hidden = false;
+  else if ('endNo' in ds) $('#confirm').hidden = true;
+  else if ('endYes' in ds) closeSession();
+  else if ('sessNext' in ds) nextStep();
+  else if ('sessBack' in ds) prevStep();
+  else if (ds.set != null) {
+    const k = +ds.set; sess.setsDone = k < sess.setsDone ? k : k + 1;
+    if (sess.setsDone > k && sess.setsDone < sess.day.sets) { sess.rest = sess.day.restSec; stopTimer(); sess.running = true; timer = setInterval(tickSession, 1000); }
+    renderSession();
+  }
+  else if ('skipRest' in ds) { sess.rest = 0; stopTimer(); renderSession(); }
+  else if ('play' in ds) { if (sess.running) stopTimer(); else { sess.running = true; timer = setInterval(tickSession, 1000); } renderSession(); }
+  else if ('phaseSkip' in ds) { sess.remaining = 1; tickSession(); }
+  else if ('feel' in ds) { b.parentElement.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', x === b)); }
+  else if ('finish' in ds) { state.done[sess.day.id] = {}; closeSession(); render(); toast('Saved. Nice work.'); }
+});
+$('#screen').addEventListener('input', (e) => { if (e.target.id === 'kg') state.weights[sess.steps[sess.i].e[0]] = e.target.value; });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#session').hidden) $('#confirm').hidden = false; });
+
+/* Frame animation: ping-pong through 3 frames, like FitSplit (450 ms). */
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let frameIdx = 0, dir = 1;
+if (!reduce) setInterval(() => {
+  frameIdx += dir; if (frameIdx === 2 || frameIdx === 0) dir *= -1;
+  document.querySelectorAll('[data-anim]').forEach((el) => { const f = el.children; for (let k = 0; k < f.length; k++) f[k].classList.toggle('on', k === frameIdx); });
+}, 450);
+
+render();
+</script>

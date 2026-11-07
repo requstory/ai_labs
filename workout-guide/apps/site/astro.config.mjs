@@ -4,7 +4,7 @@ import { defineConfig } from 'astro/config';
 export default defineConfig({
   site: 'https://requstory.github.io',
   base: '/ai_labs',
-  integrations: [sitemap()],
+  integrations: [sitemap({ filter: (page) => !page.includes('/coach/') })],
   output: 'static',
   trailingSlash: 'always',
 });

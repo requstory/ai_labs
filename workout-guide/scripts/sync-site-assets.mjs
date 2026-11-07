@@ -73,6 +73,35 @@ await Promise.all([
   sharp(iconSource).resize(180, 180).flatten({ background: '#101010' }).png().toFile(join(targetIcons, 'apple-touch-icon.png')),
 ]);
 
+// Coach (personal 24-week plan) icons: a teal goblet squat on FitSplit black.
+const coachIcons = join(sitePublic, 'coach', 'icons');
+await mkdir(coachIcons, { recursive: true });
+const gobletFrame = await readFile(join(packageRoot, 'assets', 'goblet-squat', 'frame-2.svg'), 'utf8');
+const gobletBody = gobletFrame.match(/<svg[^>]*>([\s\S]*)<\/svg>/)?.[1]?.replace(/fill="#fff"/g, 'fill="#4ecdc4"');
+if (!gobletBody) throw new Error('Invalid SVG frame for the Coach icon.');
+const coachIcon = Buffer.from(
+  `<svg width="1024" height="1024" xmlns="http://www.w3.org/2000/svg"><rect width="1024" height="1024" fill="#101010"/><g transform="translate(212 196) scale(${600 / 512})">${gobletBody}</g></svg>`,
+);
+await Promise.all([
+  sharp(coachIcon).resize(192, 192).png().toFile(join(coachIcons, 'icon-192.png')),
+  sharp(coachIcon).resize(512, 512).png().toFile(join(coachIcons, 'icon-512.png')),
+  sharp(coachIcon).resize(180, 180).png().toFile(join(coachIcons, 'apple-touch-icon.png')),
+]);
+
+// Every frame Coach shows, so its sessions work offline from the first visit.
+const coachSource = await readFile(join(projectRoot, 'apps', 'site', 'src', 'coach', 'plan.ts'), 'utf8');
+const coachSlugs = [...new Set([...coachSource.matchAll(/slug: '([a-z0-9-]+)'|ex\('([a-z0-9-]+)'|icon: '([a-z0-9-]+)'/g)].map((m) => m[1] ?? m[2] ?? m[3]))];
+for (const slug of coachSlugs) {
+  if (!manifest.some((item) => item.slug === slug)) throw new Error(`Coach uses an unknown exercise: ${slug}`);
+}
+const coachShell = [
+  './coach/',
+  './coach/manifest.webmanifest',
+  './coach/icons/icon-192.png',
+  './coach/icons/apple-touch-icon.png',
+  ...coachSlugs.flatMap((slug) => [1, 2, 3].map((i) => `./frames/${slug}/frame-${i}.svg`)),
+];
+
 const swVersion = `fitsplit-${Date.now()}`;
 const swSource = `const CACHE_VERSION = ${JSON.stringify(swVersion)};
 const APP_SHELL = [
@@ -86,6 +115,7 @@ const APP_SHELL = [
   './exercises/',
   './manifest.webmanifest',
   './favicon.svg',
+  ...${JSON.stringify(coachShell)},
 ];
 
 self.addEventListener('install', (event) => {

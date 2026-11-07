@@ -29,6 +29,14 @@ This npm-workspace monorepo contains:
 - `packages/workout-guide`: package API, canonical manifest, and all 906 transparent 512 × 512 SVGs, with PNG sources retained for compatibility.
 - `apps/site`: Astro landing page, gallery, detail pages, and guide.
 - `scripts`: deterministic catalog import and validation utilities.
+- `apps/site/src/coach` + `apps/site/src/pages/coach`: **Coach**, a personal 24-week plan app at `/coach/` (see below).
+
+### Coach
+
+A Home Screen web app for a 24-week run/walk and strength plan: today's session, animated exercises, a set tracker with rest timer, jog/walk and interval timers with sound cues that play over your music, Monday weigh-ins (with optional waist and an Apple Health import via a Shortcut), charts against target, a Sunday summary, pause for illness or holiday, a rest-day mobility routine, calendar reminders (.ics), and backup/restore. All personal data stays on the device; starting numbers are entered on first launch.
+
+- Plan data and checklist text: `src/coach/plan.ts` (tests in `apps/site/test`). Run `npm test -w workout-guide-site`; set `COACH_CHECKLIST=/path/to/Daily_checklist.md` to compare every generated row with the checklist.
+- Preview another date: open `/coach/?today=2026-11-10` (`?today=clear` resets).
 
 Run the project locally:
 
